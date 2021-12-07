@@ -4,4 +4,6 @@
   )
 )
 
-(print (list? '()))
+(print
+  (append '(1 2 3) (list 10) '(4 5 6))
+)
