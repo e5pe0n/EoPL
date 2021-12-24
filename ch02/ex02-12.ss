@@ -6,7 +6,7 @@
 
 (define empty-stack
   (lambda ()
-    (lambda ()
+    (lambda (k)
       (error "empty stack")
     )
   )
