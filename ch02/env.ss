@@ -37,11 +37,11 @@
 )
 (define report-no-binding-found
   (lambda (search-var)
-    (error (list 'apply-env ": No binding for" search-var))
+    (error 'apply-env ": No binding for -s" search-var)
   )
 )
 (define report-invalid-env
   (lambda (env)
-    (error (list 'apply-env ": Bad environment=" env))
+    (error 'apply-env ": Bad environment=-s" env)
   )
 )
