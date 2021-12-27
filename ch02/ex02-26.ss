@@ -32,27 +32,6 @@
   )
 )
 
-(define t1
-  (rbst
-    (red-node
-      (blue-node
-        (list
-          (leaf-node 26)
-          (leaf-node 12)
-        )
-      )
-      (red-node
-        (leaf-node 11)
-        (blue-node
-          (list
-            (leaf-node 117)
-            (leaf-node 14)
-          )
-        )
-      )
-    )
-  )
-)
 (define _mark-leaves-with-red-depth
   (lambda (num-reds st)
     (cases red-blue-subtree st
@@ -121,8 +100,31 @@
     )
   )
 )
+
+
+(define t1
+  (rbst
+    (red-node
+      (blue-node
+        (list
+          (leaf-node 26)
+          (leaf-node 12)
+        )
+      )
+      (red-node
+        (leaf-node 11)
+        (blue-node
+          (list
+            (leaf-node 117)
+            (leaf-node 14)
+          )
+        )
+      )
+    )
+  )
+)
 (print
   (red-blue-tree-to-list
     (mark-leaves-with-red-depth t1)
   )
-)
+) ; (red (blue (1 1)) (red 2 (blue (2 2))))

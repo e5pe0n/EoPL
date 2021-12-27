@@ -7,3 +7,10 @@ Workspace for "Essentials of Programming Languages (3rd edition) / Daniel P. Fri
 ```
 csi -s xxx.ss
 ```
+
+
+# Install libraries
+
+```
+chicken-install <library-name>
+```
