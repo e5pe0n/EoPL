@@ -1,0 +1,55 @@
+(import datatype)
+
+(define list-of
+  (lambda (pred)
+    (lambda (val)
+      (or (null? val)
+        (and (pair? val)
+          (pred (car val))
+          ((list-of pred) (cdr val))
+        )
+      )
+    )
+  )
+)
+(define identifier?
+  (lambda (x)
+    (symbol? x)
+  )
+)
+(define-datatype lc-exp lc-exp?
+  (var-exp
+    (var identifier?)
+  )
+  (lambda-exp
+    (bound-vars (list-of identifier?))
+    (body lc-exp?)
+  )
+  (app-exp
+    (rator lc-exp?)
+    (rands (list-of lc-exp?))
+  )
+)
+(define map
+  (lambda (f lst)
+    (if (null? lst)
+      '()
+      (cons (f (car lst)) (map f (cdr lst)))
+    )
+  )
+)
+(define parse
+  (lambda (datum)
+    (cond
+      ((identifier? datum) (var-exp datum))
+      (((list-of identifier?) datum) datum)
+      (((list-of lc-exp?) datum) (map parse datum))
+      ((pair? datum)
+        (if (eqv? (car datum) 'lambda)
+          (lambda-exp (cadr datum) (parse (caddr datum)))
+          (app-exp (car datum) (parse (cdr datum)))
+        )
+      )
+    )
+  )
+)
