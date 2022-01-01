@@ -61,10 +61,13 @@
   (bool-exp
     (bool boolean?)
   )
-  (list-exp
-    (lst1 mylist?)
+  (vlist-exp
+    (lst1 vlist?)
   )
-  (emptylist-exp)
+  (emptyvlist-exp)
+  (elist-exp
+    (lst1 list?)
+  )
   (null?-exp
     (exp1 expression?)
   )
@@ -128,6 +131,9 @@
   (cdr-exp
     (exp1 expression?)
   )
+  (cond-exp
+    (exp-pairs list?)
+  )
 )
 (define identifier?
   (lambda (x)
@@ -135,11 +141,11 @@
   )
 )
 
-(define-datatype mylist mylist?
-  (emptylist)
-  (non-empty-list
+(define-datatype vlist vlist?
+  (emptyvlist)
+  (non-empty-vlist
     (first expval?)
-    (rest mylist?)
+    (rest vlist?)
   )
 )
 (define report-empty-list-error
@@ -157,7 +163,7 @@
     (bool boolean?)
   )
   (list-val
-    (lst1 mylist?)
+    (lst1 vlist?)
   )
 )
 (define expval->num
@@ -221,14 +227,23 @@
     (cases expression exp
       (const-exp (num) (num-val num))
       (bool-exp (bool) (bool-val bool))
-      (emptylist-exp () (list-val (emptylist)))
-      (list-exp (lst1) (list-val lst1))
+      (emptyvlist-exp () (list-val (emptyvlist)))
+      (vlist-exp (lst1) (list-val lst1))
+      (elist-exp (lst1)
+        (value-of
+          (if (null? lst1)
+            (emptyvlist-exp)
+            (cons-exp (car lst1) (elist-exp (cdr lst1)))
+          )
+          env
+        )
+      )
       (null?-exp (exp1)
         (let ([val1 (value-of exp1 env)])
           (let ([_lst (expval->list val1)])
-            (cases mylist _lst
+            (cases vlist _lst
               (emptylist () (bool-val #t))
-              (non-empty-list (first rest) (bool-val #f))
+              (non-empty-vlist (first rest) (bool-val #f))
             )
           )
         )
@@ -325,7 +340,7 @@
         )
       )
       (cons-exp (exp1 exp2)
-        (list-val (non-empty-list
+        (list-val (non-empty-vlist
           (value-of exp1 env)
           (let ([val1 (value-of exp2 env)])
             (expval->list val1)
@@ -335,8 +350,8 @@
       (car-exp (exp1)
         (let ([val1 (value-of exp1 env)])
           (let ([_lst (expval->list val1)])
-            (cases mylist _lst
-              (non-empty-list (first rest) first)
+            (cases vlist _lst
+              (non-empty-vlist (first rest) first)
               (else (report-empty-list-error "value-of car-exp"))
             )
           )
@@ -345,9 +360,25 @@
       (cdr-exp (exp1)
         (let ([val1 (value-of exp1 env)])
           (let ([_lst (expval->list val1)])
-            (cases mylist _lst
-              (non-empty-list (first rest) (list-val rest))
+            (cases vlist _lst
+              (non-empty-vlist (first rest) (list-val rest))
               (else (report-empty-list-error "value-of cdr-exp"))
+            )
+          )
+        )
+      )
+      (cond-exp (exp-pairs)
+        (if (null? exp-pairs)
+          (error "value-of cond-exp; no satisfied condition")
+          (let ([fst (car exp-pairs)])
+            (let ([left-val (value-of (car fst) env)])
+              (value-of
+                (if (expval->bool left-val)
+                  (cadr fst)
+                  (cond-exp (cdr exp-pairs))
+                )
+                env
+              )
             )
           )
         )
@@ -356,115 +387,141 @@
   )
 )
 
-(define mylist->list
+(define vlist->list
   (lambda (mylst)
-    (cases mylist mylst
-      (emptylist () '())
-      (non-empty-list (first rest)
+    (cases vlist mylst
+      (emptyvlist () '())
+      (non-empty-vlist (first rest)
         (cons
           (cases expval first
             (num-val (num) num)
             (bool-val (bool) bool)
-            (list-val (lst1) (mylist->list lst1))
+            (list-val (lst1) (vlist->list lst1))
           )
-          (mylist->list rest)
+          (vlist->list rest)
         )
       )
     )
   )
 )
 
+(print
+  (expval->num
+    (value-of
+      (let-exp 'x (const-exp 3)
+        (cond-exp (list
+          (list (equal?-exp (var-exp 'x) (const-exp 1)) (const-exp 10))
+          (list (equal?-exp (var-exp 'x) (const-exp 2)) (const-exp 20))
+          (list (equal?-exp (var-exp 'x) (const-exp 3)) (const-exp 30))
+        ))
+      )
+      (empty-env)
+    )
+  )
+) ; 30
 ; (print
-;   (mylist->list
-;     (non-empty-list (num-val 1)
-;       (non-empty-list (list-val
-;         (non-empty-list (num-val 10)
-;           (non-empty-list (bool-val #t) (emptylist))
+;   (vlist->list
+;     (expval->list
+;       (value-of
+;         (let-exp 'x (const-exp 4)
+;           (elist-exp (list (var-exp 'x) (diff-exp (var-exp 'x) (const-exp 1)) (diff-exp (var-exp 'x) (const-exp 3))))
+;         )
+;         (empty-env)
+;       )
+;     )
+;   )
+; ) ; (4 3 1)
+; (print
+;   (vlist->list
+;     (non-empty-vlist (num-val 1)
+;       (non-empty-vlist (list-val
+;         (non-empty-vlist (num-val 10)
+;           (non-empty-vlist (bool-val #t) (emptylist))
 ;         ))
-;         (non-empty-list (bool-val #f)
+;         (non-empty-vlist (bool-val #f)
 ;           (emptylist)
 ;         )
 ;       )
 ;     )
 ;   )
 ; )
-(define e1
-  (cons-exp
-    (const-exp 1)
-    (cons-exp
-      (cons-exp
-        (const-exp 2)
-        (cons-exp
-          (const-exp 3)
-          (emptylist-exp)
-        )
-      )
-      (cons-exp
-        (const-exp 4)
-        (emptylist-exp)
-      )
-    )
-  )
-)
-(print
-  (mylist->list
-    (expval->list
-      (value-of
-        e1
-        (empty-env)
-      )
-    )
-  )
-) ; (1 (2 3) 4)
-(print
-  (expval->num
-    (value-of
-      (car-exp e1)
-      (empty-env)
-    )
-  )
-) ; 1
-(print
-  (mylist->list
-    (expval->list
-      (value-of
-        (car-exp (cdr-exp e1))
-        (empty-env)
-      )
-    )
-  )
-) ; (2 3)
-(define e2
-  (let-exp 'x (const-exp 4)
-    (cons-exp
-      (var-exp 'x)
-      (cons-exp
-        (cons-exp
-          (diff-exp (var-exp 'x) (const-exp 1))
-          (emptylist-exp)
-        )
-        (emptylist-exp)
-      )
-    )
-  )
-)
-(print
-  (mylist->list
-    (expval->list
-      (value-of e2 (empty-env))
-    )
-  )
-) ; (4 (3))
-(print
-  (expval->bool
-    (value-of (null?-exp e2) (empty-env))
-  )
-) ; #f
-(print
-  (expval->bool
-    (value-of (null?-exp (emptylist-exp)) (empty-env))
-  )
-) ; #t
+; (define e1
+;   (cons-exp
+;     (const-exp 1)
+;     (cons-exp
+;       (cons-exp
+;         (const-exp 2)
+;         (cons-exp
+;           (const-exp 3)
+;           (emptyvlist-exp)
+;         )
+;       )
+;       (cons-exp
+;         (const-exp 4)
+;         (emptyvlist-exp)
+;       )
+;     )
+;   )
+; )
+; (print
+;   (vlist->list
+;     (expval->list
+;       (value-of
+;         e1
+;         (empty-env)
+;       )
+;     )
+;   )
+; ) ; (1 (2 3) 4)
+; (print
+;   (expval->num
+;     (value-of
+;       (car-exp e1)
+;       (empty-env)
+;     )
+;   )
+; ) ; 1
+; (print
+;   (vlist->list
+;     (expval->list
+;       (value-of
+;         (car-exp (cdr-exp e1))
+;         (empty-env)
+;       )
+;     )
+;   )
+; ) ; (2 3)
+; (define e2
+;   (let-exp 'x (const-exp 4)
+;     (cons-exp
+;       (var-exp 'x)
+;       (cons-exp
+;         (cons-exp
+;           (diff-exp (var-exp 'x) (const-exp 1))
+;           (emptyvlist-exp)
+;         )
+;         (emptyvlist-exp)
+;       )
+;     )
+;   )
+; )
+; (print
+;   (vlist->list
+;     (expval->list
+;       (value-of e2 (empty-env))
+;     )
+;   )
+; ) ; (4 (3))
+; (print
+;   (expval->bool
+;     (value-of (null?-exp e2) (empty-env))
+;   )
+; ) ; #f
+; (print
+;   (expval->bool
+;     (value-of (null?-exp (emptyvlist-exp)) (empty-env))
+;   )
+; ) ; #t
 
 ; (define e1
 ;   (minus-exp
