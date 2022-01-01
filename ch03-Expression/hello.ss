@@ -1,1 +1,1 @@
-(print (boolean? #t))
+(print (null? #f))
