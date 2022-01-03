@@ -484,30 +484,91 @@
     (value-of
       (let-exp 'makemult
         (proc-exp 'maker
-          (proc-exp 'x
-            (if-exp (zero?-exp (var-exp 'x))
-              (const-exp 0)
-              (diff-exp
-                (call-exp
-                  (call-exp (var-exp 'maker) (var-exp 'maker))
-                  (diff-exp (var-exp 'x) (const-exp 1))
+          (proc-exp 'y
+            (proc-exp 'x
+              (if-exp (zero?-exp (var-exp 'x))
+                (const-exp 0)
+                (diff-exp
+                  (call-exp
+                    (call-exp
+                      (call-exp (var-exp 'maker) (var-exp 'maker))
+                      (diff-exp (var-exp 'x) (const-exp 1))
+                    )
+                    (var-exp 'y)
+                  )
+                  (minus-exp (var-exp 'y))
                 )
-                (minus-exp (const-exp 4))
               )
             )
           )
         )
-        (let-exp 'times4
-          (proc-exp 'x
-            (call-exp
-              (call-exp (var-exp 'makemult) (var-exp 'makemult))
-              (var-exp 'x)
+        (let-exp 'mul
+          (proc-exp 'y
+            (proc-exp 'x
+              (call-exp
+                (call-exp
+                  (call-exp (var-exp 'makemult) (var-exp 'makemult))
+                  (var-exp 'x)
+                )
+                (var-exp 'y)
+              )
             )
           )
-          (call-exp (var-exp 'times4) (const-exp 3))
+          (let-exp 'fact
+            (proc-exp 'f
+              (proc-exp 'z
+                (if-exp (zero?-exp (var-exp 'z))
+                  (const-exp 1)
+                  (call-exp
+                    (call-exp (var-exp 'mul) (var-exp 'z))
+                    (call-exp
+                      (call-exp (var-exp 'f) (var-exp 'f))
+                      (diff-exp (var-exp 'z) (const-exp 1))
+                    )
+                  )
+                )
+              )
+            )
+            (call-exp
+              (call-exp (var-exp 'fact) (var-exp 'fact))
+              (const-exp 6)
+            )
+          )
         )
       )
       (empty-env)
     )
   )
-) ; 12
+) ; 720
+; (print
+;   (expval->num
+;     (value-of
+;       (let-exp 'makemult
+;         (proc-exp 'maker
+;           (proc-exp 'x
+;             (if-exp (zero?-exp (var-exp 'x))
+;               (const-exp 0)
+;               (diff-exp
+;                 (call-exp
+;                   (call-exp (var-exp 'maker) (var-exp 'maker))
+;                   (diff-exp (var-exp 'x) (const-exp 1))
+;                 )
+;                 (minus-exp (const-exp 4))
+;               )
+;             )
+;           )
+;         )
+;         (let-exp 'times4
+;           (proc-exp 'x
+;             (call-exp
+;               (call-exp (var-exp 'makemult) (var-exp 'makemult))
+;               (var-exp 'x)
+;             )
+;           )
+;           (call-exp (var-exp 'times4) (const-exp 3))
+;         )
+;       )
+;       (empty-env)
+;     )
+;   )
+; ) ; 12
