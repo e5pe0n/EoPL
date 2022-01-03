@@ -95,18 +95,23 @@
   (minus-exp
     (exp1 expression?)
   )
-  (list-exp
-    (exp1 list-expression?)
-  )
   (null?-exp
     (exp1 expression?)
   )
+  (emptylist-exp)
+  (cons-exp
+    (first expression?)
+    (rest expression?)
+  )
+  (cdr-exp
+    (exp1 expression?)
+  )
   (car-exp
-    (exp1 list-expression?)
+    (exp1 expression?)
   )
   (unpack-exp
     (vars (list-of identifier?))
-    (exp1 list-expression?)
+    (exp1 expression?)
     (body expression?)
   )
   (proc-exp
@@ -115,7 +120,7 @@
   )
   (call-exp
     (rator expression?)
-    (rands list-expression?)
+    (rands (list-of expression?))
   )
 )
 (define identifier?
@@ -161,16 +166,6 @@
   )
 )
 
-(define-datatype list-expression list-expression?
-  (emptylist-exp)
-  (cons-exp
-    (first expression?)
-    (rest list-expression?)
-  )
-  (cdr-exp
-    (exp1 list-expression?)
-  )
-)
 
 (define-datatype proc proc?
   (procedure
@@ -184,14 +179,15 @@
   (lambda (proc1 args)
     (cases proc proc1
       (procedure (params body saved-env)
-        (let f ([ps params] [as args])
-          saved-env
-          (value-of
-            body
-            (extend-env
-              (car ps)
-              (car as)
-              (f (cdr ps) (cdr as))
+        (value-of body
+          (let f ([ps params] [as args])
+            (if (null? ps)
+              saved-env
+              (extend-env
+                (car ps)
+                (expval->car as)
+                (f (cdr ps) (expval->cdr as))
+              )
             )
           )
         )
@@ -219,6 +215,14 @@
 (define vlist?
   (lambda (x)
     (or (null? x) (pair? x))
+  )
+)
+(define list->list-exp
+  (lambda (x)
+    (if (null? x)
+      (emptylist-exp)
+      (cons-exp (car x) (list->list-exp (cdr x)))
+    )
   )
 )
 
@@ -258,7 +262,24 @@
     )
   )
 )
-(define )
+(define expval->car
+  (lambda (val)
+    (cases expval val
+      (list-val (lst1)
+        (car lst1)
+      )
+    )
+  )
+)
+(define expval->cdr
+  (lambda (val)
+    (cases expval val
+      (list-val (lst1)
+        (cdr lst1)
+      )
+    )
+  )
+)
 (define expval->proc
   (lambda (val)
     (cases expval val
@@ -381,9 +402,6 @@
       (minus-exp (exp1)
         (value-of (diff-exp (const-exp 0) exp1) env)
       )
-      (list-exp (exp1)
-        (value-of-list-exp exp1 env)
-      )
       (null?-exp (exp1)
         (cases expval (value-of exp1 env)
           (num-val (num) #f)
@@ -392,9 +410,24 @@
         )
       )
       (car-exp (exp1)
-        (cases list-expression exp1
+        (cases expression exp1
           (cons-exp (first rest)
             (value-of first env)
+          )
+        )
+      )
+      (cons-exp (first rest)
+        (list-val
+          (cons
+            (value-of first env)
+            (value-of rest env)
+          )
+        )
+      )
+      (cdr-exp (exp1)
+        (cases expression exp1
+          (cons-exp (first rest)
+            (value-of rest env)
           )
         )
       )
@@ -404,7 +437,7 @@
           (value-of
             (unpack-exp
               (cdr vars)
-              (cases list-expression exp1
+              (cases expression exp1
                 (cons-exp (first rest)
                   rest
                 )
@@ -426,7 +459,7 @@
         (let
           (
             [proc1 (expval->proc (value-of rator env))]
-            [args (value-of-list-exp rands env)]
+            [args (value-of (list->list-exp rands) env)]
           )
           (apply-procedure proc1 args)
         )
@@ -480,29 +513,6 @@
   )
 )
 
-(define value-of-list-exp
-  (lambda (exp env)
-    (cases list-expression exp
-      (emptylist-exp () (list-val '()))
-      (cons-exp (first rest)
-        (list-val
-          (cons
-            (value-of first env)
-            (value-of-list-exp rest env)
-          )
-        )
-      )
-      (cdr-exp (exp1)
-        (cases list-expression exp1
-          (cons-exp (first rest)
-            (value-of-list-exp rest env)
-          )
-        )
-      )
-    )
-  )
-)
-
 (print
   (expval->num
     (value-of
@@ -519,10 +529,10 @@
         )
         (call-exp
           (var-exp 'f)
-          (cons-exp (const-exp 10) (cons-exp (const-exp 1) (emptylist-exp)))
+          (list (const-exp 100) (const-exp 10) (const-exp 1))
         )
       )
       (empty-env)
     )
   )
-)
+) ; 91
