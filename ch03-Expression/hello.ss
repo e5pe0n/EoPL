@@ -1,1 +1,1 @@
-(print (null? #f))
+(print (and #t #t))
