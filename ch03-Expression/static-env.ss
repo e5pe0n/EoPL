@@ -1,15 +1,22 @@
 (import error-utils)
+(import datatype)
 
+; Senv = Listof(Sym)
+; Lexaddr = N
+
+; () -> Senv
 (define empty-senv
   (lambda ()
     '()
   )
 )
+; Var x Senv -> Senv
 (define extend-senv
   (lambda (var senv)
     (cons var senv)
   )
 )
+; Senv x Var -> Lexaddr
 (define apply-senv
   (lambda (senv var)
     (cond
@@ -19,10 +26,15 @@
     )
   )
 )
-
 (define report-unbound-var
   (lambda (var)
     (errorf "unbound-var: ~s" var)
+  )
+)
+
+(define-datatype program program?
+  (a-program
+    (exp1 expression?)
   )
 )
 
@@ -65,12 +77,14 @@
   )
 )
 
-(define proc?
-  (lambda (val)
-    (procedure? val)
+(define-datatype proc proc?
+  (procedure
+    (body expression?)
+    (saved-nameless-env nameless-environment?)
   )
 )
 
+; Exp x Senv -> Nameless-exp
 (define translation-of
   (lambda (exp senv)
     (cases expression exp
@@ -119,9 +133,159 @@
     )
   )
 )
-
 (define report-invalid-source-expression
   (lambda (exp)
     (errorf "invalid source expression: ~s" exp)
+  )
+)
+
+; Program -> Nameless-program
+(define translation-of-program
+  (lambda (pgm)
+    (cases program pgm
+      (a-program (exp1)
+        (a-program
+          (translation-of exp1 (init-senv))
+        )
+      )
+    )
+  )
+)
+; () -> Senv
+(define init-senv
+  (lambda ()
+    (extend-senv 'i
+      (extend-senv 'v
+        (extend-senv 'x
+          (empty-senv)
+        )
+      )
+    )
+  )
+)
+; String -> ExpVal
+(define run
+  (lambda (string)
+    (value-of-program
+      (scan&parse string)
+    )
+  )
+)
+
+; (SchemeVal -> Bool) -> List -> Bool
+(define list-of
+  (lambda (pred)
+    (lambda (lst)
+      (if (null? lst)
+        #t
+        (and
+          (pred (car lst))
+          ((list-of pred) (cdr lst))
+        )
+      )
+    )
+  )
+)
+
+; SchemeVal -> Bool
+(define nameless-environment?
+  (lambda (x)
+    ((list-of expval?) x)
+  )
+)
+; () -> Nameless-env
+(define empty-nameless-env
+  (lambda ()
+    '()
+  )
+)
+; ExpVal x Nameless-env -> Nameless-env
+(define extend-nameless-env
+  (lambda (val nameless-env)
+    (cons val nameless-env)
+  )
+)
+; Nameless-env x Lexaddr -> ExpVal
+(define apply-nameless-env
+  (lambda (nameless-env n)
+    (list-ref nameless-env n)
+  )
+)
+; Proc x ExpVal -> ExpVal
+(define apply-procedure
+  (lambda (proc1 val)
+    (cases proc proc1
+      (procedure (body saved-nameless-env)
+        (value-of body
+          (extend-nameless-env val saved-nameless-env)
+        )
+      )
+    )
+  )
+)
+
+; Nameless-exp x Nameless-env -> ExpVal
+(define value-of
+  (lambda (exp nameless-env)
+    (cases expression exp
+      (const-exp (num) (num-val num))
+      (diff-exp (exp1 exp2)
+        (num-val
+          (- (expval->num (value-of exp1 nameless-env))
+            (expval->num (value-of exp2 nameless-env))
+          )
+        )
+      )
+      (zero?-exp (exp1)
+        (bool-val (zero? (expval->num (value-of exp1 nameless-env))))
+      )
+      (if-exp (exp1 exp2 exp3)
+        (if (expval->bool (value-of exp1 nameless-env))
+          (value-of exp2 nameless-env)
+          (value-of exp3 nameless-env)
+        )
+      )
+      (call-exp (rator rand)
+        (let
+          (
+            [proc1 (expval->proc (value-of rator nameless-env))]
+            [val (value-of rand nameless-env)]
+          )
+          (apply-procedure proc1 val)
+        )
+      )
+      (nameless-var-exp (n)
+        (apply-nameless-env nameless-env n)
+      )
+      (nameless-let-exp (exp1 body)
+        (let ([val (value-of exp1 nameless-env)])
+          (value-of body
+            (extend-nameless-env val nameless-env)
+          )
+        )
+      )
+      (nameless-proc-exp (body)
+        (proc-val
+          (procedure body nameless-env)
+        )
+      )
+      (else (report-invalid-translated-expression exp))
+    )
+  )
+)
+(define report-invalid-translated-expression
+  (lambda (exp)
+    (errorf "invalid translated expression: ~s" exp)
+  )
+)
+
+; Nameless-program -> ExpVal
+(define value-of-program
+  (lambda (pgm)
+    (cases program pgm
+      (a-program (exp1)
+        (value-of exp1 (init-nameless-env))
+      )
+    )
   )
 )
