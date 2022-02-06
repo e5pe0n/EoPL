@@ -70,6 +70,16 @@
     (rator expression?)
     (rand expression?)
   )
+  (nameless-var-exp
+    (num number?)
+  )
+  (nameless-let-exp
+    (exp1 expression?)
+    (body expression?)
+  )
+  (nameless-proc-exp
+    (body expression?)
+  )
 )
 (define identifier?
   (lambda (x)
@@ -115,7 +125,7 @@
       (let-exp (var exp1 body)
         (nameless-let-exp
           (translation-of exp1 senv)
-          (translation-of body (exnted-senv var senv))
+          (translation-of body (extend-senv var senv))
         )
       )
       (proc-exp (var body)
@@ -154,20 +164,16 @@
 ; () -> Senv
 (define init-senv
   (lambda ()
-    (extend-senv 'i
-      (extend-senv 'v
-        (extend-senv 'x
-          (empty-senv)
-        )
-      )
-    )
+    (empty-senv)
   )
 )
 ; String -> ExpVal
 (define run
   (lambda (string)
     (value-of-program
-      (scan&parse string)
+      (translation-of-program
+        (scan&parse string)
+      )
     )
   )
 )
@@ -221,6 +227,46 @@
         )
       )
     )
+  )
+)
+
+(define-datatype expval expval?
+  (num-val
+    (num number?)
+  )
+  (bool-val
+    (bool boolean?)
+  )
+  (proc-val
+    (proc1 proc?)
+  )
+)
+(define expval->num
+  (lambda (val)
+    (cases expval val
+      (num-val (num) num)
+      (else report-expval-extractor-error 'num val)
+    )
+  )
+)
+(define expval->bool
+  (lambda (val)
+    (cases expval val
+      (bool-val (bool) bool)
+      (else report-expval-extractor-error 'num val)
+    )
+  )
+)
+(define expval->proc
+  (lambda (val)
+    (cases expval val
+      (proc-val (proc1) proc1)
+    )
+  )
+)
+(define report-expval-extractor-error
+  (lambda (name val)
+    (errorf "~s extractor cannot extract ~s" name val)
   )
 )
 
@@ -279,6 +325,12 @@
   )
 )
 
+(define init-nameless-env
+  (lambda ()
+    (empty-nameless-env)
+  )
+)
+
 ; Nameless-program -> ExpVal
 (define value-of-program
   (lambda (pgm)
@@ -289,3 +341,44 @@
     )
   )
 )
+
+(define _f
+  (lambda (e)
+    (expval->num
+      (value-of-program
+        (translation-of-program
+          (a-program e)
+        )
+      )
+    )
+  )
+)
+(define let-exp1
+  (let-exp
+    'x
+    (const-exp 10)
+    (let-exp
+      'y
+      (const-exp 1)
+      (diff-exp
+        (var-exp 'x)
+        (var-exp 'y)
+      )
+    )
+  )
+)
+(print (_f let-exp1)) ; 9
+
+(define proc-exp1
+  (let-exp  'f
+    (proc-exp
+      'x
+      (diff-exp
+        (const-exp 10)
+        (var-exp 'x)
+      )
+    )
+    (call-exp (var-exp 'f) (const-exp 1))
+  )
+)
+(print (_f proc-exp1))  ; 9
