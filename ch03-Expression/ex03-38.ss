@@ -38,6 +38,27 @@
   )
 )
 
+; (SchemeVal -> Bool) -> List -> Bool
+(define list-of
+  (lambda (pred)
+    (lambda (lst)
+      (if (null? lst)
+        #t
+        (and
+          (pred (car lst))
+          ((list-of pred) (cdr lst))
+        )
+      )
+    )
+  )
+)
+
+(define exp-list?
+  (lambda (lst)
+    ((list-of expression?) lst)
+  )
+)
+
 (define-datatype expression expression?
   (const-exp
     (num number?)
@@ -53,6 +74,9 @@
     (exp1 expression?)
     (exp2 expression?)
     (exp3 expression?)
+  )
+  (cond-exp
+    (exp-pairs (list-of exp-list?))
   )
   (var-exp
     (var identifier?)
@@ -117,6 +141,24 @@
           (translation-of ex3 senv)
         )
       )
+      (cond-exp (exp-pairs)
+        (cond-exp
+          (let f ([pairs exp-pairs])
+            (if (null? pairs)
+              '()
+              (let ([pair (car pairs)])
+                (cons
+                  (list
+                    (translation-of (car pair) senv)
+                    (translation-of (cadr pair) senv)
+                  )
+                  (f (cdr pairs))
+                )
+              )
+            )
+          )
+        )
+      )
       (var-exp (var)
         (nameless-var-exp
           (apply-senv senv var)
@@ -173,21 +215,6 @@
     (value-of-program
       (translation-of-program
         (scan&parse string)
-      )
-    )
-  )
-)
-
-; (SchemeVal -> Bool) -> List -> Bool
-(define list-of
-  (lambda (pred)
-    (lambda (lst)
-      (if (null? lst)
-        #t
-        (and
-          (pred (car lst))
-          ((list-of pred) (cdr lst))
-        )
       )
     )
   )
@@ -291,6 +318,20 @@
           (value-of exp3 nameless-env)
         )
       )
+      (cond-exp (exp-pairs)
+        (if (null? exp-pairs)
+          (error "value-of cond-exp; no satisfied condition.")
+          (let ([head (car exp-pairs)])
+            (value-of
+              (if (expval->bool (value-of (car head) nameless-env))
+                (cadr head)
+                (cond-exp (cdr exp-pairs))
+              )
+              nameless-env
+            )
+          )
+        )
+      )
       (call-exp (rator rand)
         (let
           (
@@ -353,32 +394,16 @@
     )
   )
 )
-(define let-exp1
-  (let-exp
-    'x
+(define cond-exp1
+  (let-exp 'x
     (const-exp 10)
-    (let-exp
-      'y
-      (const-exp 1)
-      (diff-exp
-        (var-exp 'x)
-        (var-exp 'y)
+    (cond-exp
+      (list
+        (list (zero?-exp (diff-exp (var-exp 'x) (const-exp 9))) (const-exp 0))
+        (list (zero?-exp (diff-exp (var-exp 'x) (const-exp 10))) (const-exp 1))
+        (list (zero?-exp (diff-exp (var-exp 'x) (const-exp 11))) (const-exp 2))
       )
     )
   )
 )
-(print (_f let-exp1)) ; 9
-
-(define proc-exp1
-  (let-exp  'f
-    (proc-exp
-      'x
-      (diff-exp
-        (const-exp 10)
-        (var-exp 'x)
-      )
-    )
-    (call-exp (var-exp 'f) (const-exp 1))
-  )
-)
-(print (_f proc-exp1))  ; 9
+(print (_f cond-exp1))  ; 1
