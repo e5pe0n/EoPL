@@ -333,14 +333,9 @@
 ; Nameless-env x Lexaddr -> ExpVal
 (define apply-nameless-env-rec
   (lambda (nameless-env n)
-    (print n)
-    (print (expval->any (list-ref nameless-env 0)))
-    (print (expval->any (list-ref nameless-env 1)))
-    (print (expval->any (list-ref nameless-env 2)))
-    (print)
     (cases proc (expval->proc (list-ref nameless-env n))
       (procedure (body saved-nameless-env)
-        (proc-val (procedure body nameless-env))
+        (proc-val (procedure body (extend-nameless-env-rec body nameless-env)))
       )
     )
   )
@@ -565,7 +560,7 @@
   )
 )
 (print (_f
-  (let-exp 'x (const-exp 4)
+  (let-exp 'x (const-exp 3)
     (letrec-exp 'double 'x
       (if-exp (zero?-exp (var-exp 'x))
         (const-exp 0)
@@ -588,4 +583,4 @@
       )
     )
   )
-))
+))  ; 0
