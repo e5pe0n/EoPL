@@ -1,7 +1,7 @@
 (import error-utils)
 (import datatype)
 
-; Senv = Listof(Sym)
+; Senv = Listof(PairOf(Sym, Bool))
 ; Lexaddr = N
 
 ; () -> Senv
@@ -10,19 +10,25 @@
     '()
   )
 )
-; Var x Senv -> Senv
+; Var x Bool  x Senv -> Senv
 (define extend-senv
-  (lambda (var senv)
-    (cons var senv)
+  (lambda (var letrec-bound senv)
+    (cons (cons var letrec-bound) senv)
   )
 )
-; Senv x Var -> Lexaddr
+; Senv x Var -> Lexaddr x Bool
 (define apply-senv
   (lambda (senv var)
-    (cond
-      ((null? senv) (report-unbound-var var))
-      ((eqv? var (car senv)) 0)
-      (else (+ 1 (apply-senv (cdr senv) var)))
+    (let ([head (car senv)])
+      (cond
+        ((null? senv) (report-unbound-var var))
+        ((eqv? var (car head)) (cons 0 (cdr head)))
+        (else
+          (let ([res (apply-senv (cdr senv) var)])
+            (cons (+ 1 (car res)) (cdr res))
+          )
+        )
+      )
     )
   )
 )
@@ -38,7 +44,7 @@
   )
 )
 
-; (SchemeVal -> Bool) -> List -> Bool
+; (SchemeVal -> Bool) x List -> Bool
 (define list-of
   (lambda (pred)
     (lambda (list1)
@@ -80,6 +86,12 @@
     (exp1 expression?)
     (body expression?)
   )
+  (letrec-exp
+    (p-name identifier?)
+    (b-var identifier?)
+    (p-body expression?)
+    (letrec-exp expression?)
+  )
   (emptylist-exp)
   (list-exp
     (exps exp-list?)
@@ -104,6 +116,9 @@
   (nameless-var-exp
     (num number?)
   )
+  (nameless-letrec-var-exp
+    (num number?)
+  )
   (nameless-unpack-exp
     (exp1 expression?)
     (body expression?)
@@ -111,6 +126,10 @@
   (nameless-let-exp
     (exp1 expression?)
     (body expression?)
+  )
+  (nameless-letrec-exp
+    (p-body expression?)
+    (letrec-body expression?)
   )
   (nameless-proc-exp
     (body expression?)
@@ -205,26 +224,35 @@
             (let f ([vs vars])
               (if (null? vs)
                 senv
-                (extend-senv (car vs) (f (cdr vs)))
+                (extend-senv (car vs) #f (f (cdr vs)))
               )
             )
           )
         )
       )
       (var-exp (var)
-        (nameless-var-exp
-          (apply-senv senv var)
+        (let ([res (apply-senv senv var)])
+          (if (cdr res)
+            (nameless-letrec-var-exp (car res))
+            (nameless-var-exp (car res))
+          )
         )
       )
       (let-exp (var exp1 body)
         (nameless-let-exp
           (translation-of exp1 senv)
-          (translation-of body (extend-senv var senv))
+          (translation-of body (extend-senv var #f senv))
+        )
+      )
+      (letrec-exp (p-name b-var p-body letrec-body)
+        (nameless-letrec-exp
+          (translation-of p-body (extend-senv b-var #f (extend-senv p-name #t senv)))
+          (translation-of letrec-body (extend-senv p-name #t senv))
         )
       )
       (proc-exp (var body)
         (nameless-proc-exp
-          (translation-of body (extend-senv var senv))
+          (translation-of body (extend-senv var #f senv))
         )
       )
       (call-exp (rator rand)
@@ -290,10 +318,31 @@
     (cons val nameless-env)
   )
 )
+; Exp x Nameless-env
+(define extend-nameless-env-rec
+  (lambda (p-body nameless-env)
+    (cons (proc-val (procedure p-body nameless-env)) nameless-env)
+  )
+)
 ; Nameless-env x Lexaddr -> ExpVal
 (define apply-nameless-env
   (lambda (nameless-env n)
     (list-ref nameless-env n)
+  )
+)
+; Nameless-env x Lexaddr -> ExpVal
+(define apply-nameless-env-rec
+  (lambda (nameless-env n)
+    (print n)
+    (print (expval->any (list-ref nameless-env 0)))
+    (print (expval->any (list-ref nameless-env 1)))
+    (print (expval->any (list-ref nameless-env 2)))
+    (print)
+    (cases proc (expval->proc (list-ref nameless-env n))
+      (procedure (body saved-nameless-env)
+        (proc-val (procedure body nameless-env))
+      )
+    )
   )
 )
 ; Proc x ExpVal -> ExpVal
@@ -449,9 +498,17 @@
       (nameless-var-exp (n)
         (apply-nameless-env nameless-env n)
       )
+      (nameless-letrec-var-exp (n)
+        (apply-nameless-env-rec nameless-env n)
+      )
       (nameless-let-exp (exp1 body)
         (value-of body
           (extend-nameless-env (value-of exp1 nameless-env) nameless-env)
+        )
+      )
+      (nameless-letrec-exp (p-body letrec-body)
+        (value-of letrec-body
+          (extend-nameless-env-rec p-body nameless-env)
         )
       )
       (nameless-unpack-exp (exp1 body)
@@ -509,36 +566,26 @@
 )
 (print (_f
   (let-exp 'x (const-exp 4)
-    (cons-exp
-      (var-exp 'x)
-      (cons-exp
-        (cons-exp
-          (diff-exp (var-exp 'x) (const-exp 1))
-          (emptylist-exp)
+    (letrec-exp 'double 'x
+      (if-exp (zero?-exp (var-exp 'x))
+        (const-exp 0)
+        (diff-exp
+          (call-exp
+            (var-exp 'double)
+            (diff-exp
+              (var-exp 'x)
+              (const-exp 1)
+            )
+          )
+          (const-exp -2)
         )
-        (emptylist-exp)
+      )
+      (let-exp 'y (const-exp 6)
+        (diff-exp
+          (call-exp (var-exp 'double) (var-exp 'x))
+          (var-exp 'y)
+        )
       )
     )
   )
-))  ; (5 (3))
-(print (_f
-  (let-exp 'x (const-exp 4)
-    (list-exp (list
-      (var-exp 'x)
-      (diff-exp (var-exp 'x) (const-exp 1))
-      (diff-exp (var-exp 'x) (const-exp 3))
-    ))
-  )
-))  ; (4 3 1)
-(print (_f
-  (let-exp 'u (const-exp 7)
-    (unpack-exp
-      (list 'x 'y)
-      (cons-exp
-        (var-exp 'u)
-        (cons-exp (const-exp 3) (emptylist-exp))
-      )
-      (diff-exp (var-exp 'x) (var-exp 'y))
-    )
-  )
-))  ; 4
+))

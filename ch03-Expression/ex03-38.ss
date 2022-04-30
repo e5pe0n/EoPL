@@ -136,9 +136,9 @@
       )
       (if-exp (exp1 exp2 exp3)
         (if-exp
-          (translation-of ex1 senv)
-          (translation-of ex2 senv)
-          (translation-of ex3 senv)
+          (translation-of exp1 senv)
+          (translation-of exp2 senv)
+          (translation-of exp3 senv)
         )
       )
       (cond-exp (exp-pairs)
