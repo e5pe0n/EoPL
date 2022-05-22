@@ -39,7 +39,8 @@
         (num-val
           (-
             (expval->num (value-of exp1 env))
-            (expval->num (value-of exp2 env)))
+            (expval->num (value-of exp2 env))
+          )
         )
       )
       (zero?-exp (exp1)

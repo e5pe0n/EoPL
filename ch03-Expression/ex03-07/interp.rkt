@@ -1,9 +1,23 @@
 #lang eopl
 
-(require "data-structures.rkt")
+(require "env.rkt")
+(require "expval.rkt")
 (require "lang.rkt")
 
 (provide (all-defined-out))
+
+; () -> Env
+(define init-env
+  (lambda ()
+    (extend-env 'i (num-val 1)
+      (extend-env 'v (num-val 5)
+        (extend-env 'x (num-val 10)
+          (empty-env)
+        )
+      )
+    )
+  )
+)
 
 ; Program -> ExpVal
 (define value-of-program
@@ -22,9 +36,36 @@
     (cases expression exp
       (const-exp (num) (num-val num))
       (var-exp (var) (apply-env env var))
+      (minus-exp (exp1)
+        (num-val (- 0 (expval->num (value-of exp1 env))))
+      )
       (diff-exp (exp1 exp2)
         (num-val
           (-
+            (expval->num (value-of exp1 env))
+            (expval->num (value-of exp2 env))
+          )
+        )
+      )
+      (add-exp (exp1 exp2)
+        (num-val
+          (+
+            (expval->num (value-of exp1 env))
+            (expval->num (value-of exp2 env))
+          )
+        )
+      )
+      (mul-exp (exp1 exp2)
+        (num-val
+          (*
+            (expval->num (value-of exp1 env))
+            (expval->num (value-of exp2 env))
+          )
+        )
+      )
+      (quo-exp (exp1 exp2)
+        (num-val
+          (quotient
             (expval->num (value-of exp1 env))
             (expval->num (value-of exp2 env))
           )
@@ -43,35 +84,6 @@
         (value-of body
           (extend-env var (value-of exp1 env) env)
         )
-      )
-      (letrec-exp (p-name param p-body letrec-body)
-        (value-of
-          letrec-body
-          (extend-env-rec p-name param p-body env)
-        )
-      )
-      (proc-exp (var body)
-        (proc-val (procedure var body env))
-      )
-      (call-exp (rator rand)
-        (let
-          (
-            [proc1 (expval->proc (value-of rator env))]
-            [arg (value-of rand env)]
-          )
-          (apply-procedure proc1 arg)
-        )
-      )
-    )
-  )
-)
-
-; Proc * ExpVal -> ExpVal
-(define apply-procedure
-  (lambda (proc1 val)
-    (cases proc proc1
-      (procedure (var body saved-env)
-        (value-of body (extend-env var val saved-env))
       )
     )
   )
