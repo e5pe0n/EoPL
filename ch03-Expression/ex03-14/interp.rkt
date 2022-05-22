@@ -30,15 +30,12 @@
   )
 )
 
-; Exp x Env -> ExpVal
+; Exp x Env -> ExpVal(Number)
 (define value-of
   (lambda (exp env)
     (cases expression exp
       (const-exp (num) (num-val num))
       (var-exp (var) (apply-env env var))
-      (minus-exp (exp1)
-        (num-val (- 0 (expval->num (value-of exp1 env))))
-      )
       (diff-exp (exp1 exp2)
         (num-val
           (-
@@ -47,30 +44,25 @@
           )
         )
       )
-      (add-exp (exp1 exp2)
-        (num-val
-          (+
-            (expval->num (value-of exp1 env))
-            (expval->num (value-of exp2 env))
-          )
+      (if-exp (b-exp1 exp1 exp2)
+        (if (expval->bool (value-of-bool-exp b-exp1 env))
+          (value-of exp1 env)
+          (value-of exp2 env)
         )
       )
-      (mul-exp (exp1 exp2)
-        (num-val
-          (*
-            (expval->num (value-of exp1 env))
-            (expval->num (value-of exp2 env))
-          )
+      (let-exp (var exp1 body)
+        (value-of body
+          (extend-env var (value-of exp1 env) env)
         )
       )
-      (quo-exp (exp1 exp2)
-        (num-val
-          (quotient
-            (expval->num (value-of exp1 env))
-            (expval->num (value-of exp2 env))
-          )
-        )
-      )
+    )
+  )
+)
+
+; Exp * Env -> ExpVal(Bool)
+(define value-of-bool-exp
+  (lambda (exp env)
+    (cases bool-exp exp
       (zero?-exp (exp1)
         (bool-val (zero? (expval->num (value-of exp1 env))))
       )
@@ -96,17 +88,6 @@
             (expval->num (value-of exp1 env))
             (expval->num (value-of exp2 env))
           )
-        )
-      )
-      (if-exp (exp1 exp2 exp3)
-        (if (expval->bool (value-of exp1 env))
-          (value-of exp2 env)
-          (value-of exp3 env)
-        )
-      )
-      (let-exp (var exp1 body)
-        (value-of body
-          (extend-env var (value-of exp1 env) env)
         )
       )
     )
