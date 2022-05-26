@@ -44,10 +44,10 @@
           (extend-env var (value-of exp1 env) env)
         )
       )
-      (letrec-exp (p-name param p-body letrec-body)
+      (letrec-exp (p-name b-var p-body letrec-body)
         (value-of
           letrec-body
-          (extend-env-rec p-name param p-body env)
+          (extend-env-rec p-name b-var p-body env)
         )
       )
       (proc-exp (var body)
