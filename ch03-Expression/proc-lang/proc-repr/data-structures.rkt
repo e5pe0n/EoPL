@@ -6,7 +6,7 @@
 
 (provide (all-defined-out))
 
-; Env = Var -> SchemeVal
+; Env = Var -> ExpVal
 
 ; () -> Env
 (define empty-env
@@ -17,7 +17,7 @@
   )
 )
 
-; Var * SchemeVal * Env -> Env
+; Var * ExpVal * Env -> Env
 (define extend-env
   (lambda (saved-var saved-val saved-env)
     (lambda (search-var)
@@ -29,16 +29,16 @@
   )
 )
 
-; Env * Var -> Env
+; Env * Var -> ExpVal
 (define apply-env
   (lambda (env search-var)
     (env search-var)
   )
 )
 
-; Proc = SchemeVal -> SchemeVal
+; Proc = ExpVal -> ExpVal
 
-; SchemeVal -> Bool
+; ExpVal -> Bool
 (define proc?
   (lambda (val)
     (procedure? val)
