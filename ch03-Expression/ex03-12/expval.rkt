@@ -46,7 +46,7 @@
       (num-val (num) num)
       (bool-val (bool) bool)
       (list-val (list1) list1)
-      (else report-expval-extractor-error 'list val)
+      (else report-expval-extractor-error 'any val)
     )
   )
 )
