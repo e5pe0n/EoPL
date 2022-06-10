@@ -34,11 +34,24 @@
       ("cond" (arbno expression "==>" expression) "end")
       cond-exp
     )
+    (expression
+      ("cons" "(" expression "," expression ")")
+      cons-exp
+    )
+    (expression
+      ("unpack" (arbno identifier) "=" expression "in" expression)
+      unpack-exp
+    )
     (expression (identifier) var-exp)
     (expression
       ("let" identifier "=" expression "in" expression)
       let-exp
     )
+    (expression
+      ("cons" "(" expression "," expression ")")
+      cons-exp
+    )
+    (expression ("emptylist") emptylist-exp)
     (expression
       ("proc" "(" identifier ")" expression)
       proc-exp
@@ -47,6 +60,7 @@
     (expression ("%lexref" number) nameless-var-exp)
     (expression ("%let" expression "in" expression) nameless-let-exp)
     (expression ("%lexproc" expression) nameless-proc-exp)
+    (expression ("%unpack" expression "in" expression) nameless-unpack-exp)
   )
 )
 
