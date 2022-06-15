@@ -12,6 +12,3 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     chicken-bin \
     racket \
     vim
-
-RUN exec $SHELL -l
-RUN raco pkg install racket-langserver
