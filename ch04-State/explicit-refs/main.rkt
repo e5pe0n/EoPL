@@ -19,4 +19,10 @@
         in deref(zz)
       in -((f 66), (f 55))
   ")
-)
+) ; #(struct:num-val 11)
+(print
+  (run "
+    let x = newref(newref(0))
+    in setref(deref(x), 10000)
+  ")
+) ; #(struct:num-val 23)

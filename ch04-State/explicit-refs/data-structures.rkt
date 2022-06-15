@@ -108,7 +108,15 @@
   )
 )
 
-
+; ExpVal -> Ref
+(define expval->ref
+  (lambda (val)
+    (cases expval val
+      (ref-val (num) num)
+      (else report-expval-extractor-error 'ref val)
+    )
+  )
+)
 ; () -> Sto
 (define empty-store
   (lambda () '())
@@ -166,8 +174,8 @@
             )
           )
         ])
+        (setref-inner the-store ref)
       )
-      (setref-inner the-store ref)
     )
   )
 )
