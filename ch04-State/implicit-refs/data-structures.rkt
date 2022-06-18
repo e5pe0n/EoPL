@@ -14,9 +14,9 @@
     (saved-env environment?)
   )
   (extend-env-rec
-    (p-name identifier?)
-    (b-var identifier?)
-    (body expression?)
+    (p-names (list-of identifier?))
+    (b-vars (list-of identifier?))
+    (p-bodies (list-of expression?))
     (env environment?)
   )
 )
@@ -24,9 +24,9 @@
 ; () -> Env
 (define init-env
   (lambda ()
-    (extend-env 'i (num-val 1)
-      (extend-env 'v (num-val 5)
-        (extend-env 'x (num-val 10)
+    (extend-env 'i 2
+      (extend-env 'v 1
+        (extend-env 'x 0
           (empty-env)
         )
       )
@@ -34,7 +34,7 @@
   )
 )
 
-; Env * Var -> ExpVal
+; Env * Var -> Ref
 (define apply-env
   (lambda (env search-var)
     (cases environment env
@@ -45,10 +45,20 @@
           (apply-env saved-env search-var)
         )
       )
-      (extend-env-rec (p-name b-var p-body saved-env)
-        (if (eqv? p-name search-var)
-          (proc-val (procedure b-var p-body env))
-          (apply-env saved-env search-var)
+      (extend-env-rec (p-names b-vars p-bodies saved-env)
+        (let ([n (location search-var p-names)])
+          (if n
+            (newref
+              (proc-val
+                (procedure
+                  (list-ref b-vars n)
+                  (list-ref p-bodies n)
+                  env
+                )
+              )
+            )
+            (apply-env saved-env search-var)
+          )
         )
       )
     )
@@ -117,6 +127,8 @@
     )
   )
 )
+
+
 ; () -> Sto
 (define empty-store
   (lambda () '())
@@ -133,7 +145,7 @@
 ; () -> Unspecified
 (define initialize-store!
   (lambda ()
-    (set! the-store (empty-store))
+    (set! the-store (list (num-val 10) (num-val 5) (num-val 1)))
   )
 )
 
@@ -161,6 +173,7 @@
   )
 )
 
+; Ref * ExpVal -> ()
 (define setref!
   (lambda (ref val)
     (set! the-store
