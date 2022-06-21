@@ -43,12 +43,7 @@
       )
       (let-exp (vars exps body)
         (value-of body
-          (let f ([vs vars] [es exps])
-            (if (null? vs)
-              env
-              (extend-env (car vs) (newref (value-of (car es) env)) (f (cdr vs) (cdr es)))
-            )
-          )
+          (extend-env vars (map (lambda (x) (newref (value-of x env))) exps) env)
         )
       )
       (letrec-exp (p-names b-vars-list p-bodies letrec-body)
@@ -102,18 +97,13 @@
   )
 )
 
-; Proc * ExpVal -> ExpVal
+; Proc * Listof(ExpVal) -> ExpVal
 (define apply-procedure
   (lambda (proc1 vals)
     (cases proc proc1
       (procedure (vars body saved-env)
         (value-of body
-          (let f ([vrs vars] [vls vals])
-            (if (null? vrs)
-              saved-env
-              (extend-env (car vrs) (newref (car vls)) (f (cdr vrs) (cdr vls)))
-            )
-          )
+          (extend-env vars (map (lambda (x) (newref x)) vals) saved-env)
         )
       )
     )

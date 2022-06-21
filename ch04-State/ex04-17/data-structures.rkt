@@ -9,8 +9,8 @@
 (define-datatype environment environment?
   (empty-env)
   (extend-env
-    (saved-var symbol?)
-    (saved-val s-val?)
+    (saved-vars (list-of symbol?))
+    (saved-vals (list-of s-val?))
     (saved-env environment?)
   )
   (extend-env-rec
@@ -24,13 +24,7 @@
 ; () -> Env
 (define init-env
   (lambda ()
-    (extend-env 'i 2
-      (extend-env 'v 1
-        (extend-env 'x 0
-          (empty-env)
-        )
-      )
-    )
+    (extend-env (list 'i 'v 'x) (list 2 1 0) (empty-env))
   )
 )
 
@@ -39,25 +33,33 @@
   (lambda (env search-var)
     (cases environment env
       (empty-env () (report-no-binding-found search-var))
-      (extend-env (saved-var saved-val saved-env)
-        (if (eqv? search-var saved-var)
-          saved-val
-          (apply-env saved-env search-var)
-        )
-      )
-      (extend-env-rec (p-names b-vars-list p-bodies saved-env)
-        (let ([n (location search-var p-names)])
+      (extend-env (saved-vars saved-vals saved-env)
+        (let ([n (location search-var saved-vars)])
           (if n
-            (newref
-              (proc-val
-                (procedure
-                  (list-ref b-vars-list n)
-                  (list-ref p-bodies n)
-                  env
-                )
+            (let ([val (list-ref saved-vals n)])
+              (if (vector? val)
+                (vector-ref val 0)
+                val
               )
             )
             (apply-env saved-env search-var)
+          )
+        )
+      )
+      (extend-env-rec (p-names b-vars-list p-bodies saved-env)
+        (let ([vecs (map (lambda (x) (make-vector 1)) p-names)])
+          (let ([new-env (extend-env p-names vecs saved-env)])
+            (map
+              (lambda (vec b-vars p-body)
+                (vector-set! vec 0
+                  (newref
+                    (proc-val (procedure b-vars p-body new-env))
+                  )
+                )
+              )
+              vecs b-vars-list p-bodies
+            )
+            (apply-env new-env search-var)
           )
         )
       )
