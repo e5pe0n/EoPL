@@ -53,27 +53,38 @@
           (value-of exp3 env)
         )
       )
-      (let-exp (vars exps body)
+      (let-exp (var exp1 body)
         (value-of body
-          (extend-env vars (map (lambda (x) (newref (value-of x env))) exps) env)
+          (extend-env var (newref (value-of exp1 env)) env)
         )
       )
-      (letrec-exp (p-names b-vars-list p-bodies letrec-body)
+      (letrec-exp (p-names b-vars p-bodies letrec-body)
         (value-of
           letrec-body
-          (extend-env-rec p-names b-vars-list p-bodies env)
+          (extend-env-rec p-names b-vars p-bodies env)
         )
       )
-      (proc-exp (vars body)
-        (proc-val (procedure vars body env))
+      (proc-exp (var body)
+        (proc-val (procedure var body env))
       )
-      (call-exp (rator rands)
-        (let
-          (
-            [proc1 (expval->proc (value-of rator env))]
-            [args (map (lambda (x) (value-of-operand x env)) rands)]
+      (procv-exp (var body)
+        (procv-val (procedure var body env))
+      )
+      (call-exp (rator rand)
+        (let ([proc1 (value-of rator env)])
+          (cases expval proc1
+            (proc-val (proc1)
+              (let ([arg (value-of-operand rand env)])
+                (apply-procedure proc1 arg)
+              )
+            )
+            (procv-val (proc1)
+              (let ([arg (value-of rand env)])
+                (apply-procedure proc1 (newref arg))
+              )
+            )
+            (else (eopl:error 'invalid-proc' "proc1 must be proc-val; received proc1=~s" proc1))
           )
-          (apply-procedure proc1 args)
         )
       )
       (newref-exp (exp1)
@@ -111,10 +122,10 @@
 
 ; Proc * ExpVal -> ExpVal
 (define apply-procedure
-  (lambda (proc1 vals)
+  (lambda (proc1 val)
     (cases proc proc1
-      (procedure (vars body saved-env)
-        (value-of body (extend-env vars vals saved-env))
+      (procedure (var body saved-env)
+        (value-of body (extend-env var val saved-env))
       )
     )
   )
