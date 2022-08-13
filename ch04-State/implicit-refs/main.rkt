@@ -59,3 +59,14 @@
         end
   ")
 ) ; #(struct:num-val 1)
+(print
+  (run "
+    let p = proc (x)
+              set x = 4
+    in let a = 3
+      in begin
+        (p a);
+        a
+      end
+  ")
+) ; #(struct:num-val 3) because arguments are passed by call-by-value
