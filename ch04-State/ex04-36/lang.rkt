@@ -1,0 +1,87 @@
+#lang eopl
+
+(provide (all-defined-out))
+
+(define the-lexical-spec
+  '(
+    (whitespace (whitespace) skip)
+    (comment ("%" (arbno (not #\newline))) skip)
+    (identifier
+      (letter (arbno (or letter digit "_" "-" "?")))
+      symbol)
+    (number (digit (arbno digit)) number)
+    (number ("-" digit (arbno digit)) number)
+  )
+)
+
+(define the-grammar
+  '(
+    (program (expression) a-program)
+    (expression (number) const-exp)
+    (expression
+      ("-" "(" expression "," expression ")")
+      diff-exp
+    )
+    (expression
+      ("+" "(" expression "," expression ")")
+      add-exp
+    )
+    (expression
+      ("zero?" "(" expression ")")
+      zero?-exp
+    )
+    (expression
+      ("if" expression "then" expression "else" expression)
+      if-exp
+    )
+    (expression (identifier) var-exp)
+    (expression
+      ("let" identifier "=" expression "in" expression)
+      let-exp
+    )
+    (expression
+      ("letref" identifier "=" expression "in" expression)
+      letref-exp
+    )
+    (expression
+      ("letrec" (arbno identifier "(" identifier ")" "=" expression) "in" expression)
+      letrec-exp
+    )
+    (expression
+      ("proc" "(" identifier ")" expression)
+      proc-exp
+    )
+    (expression
+      ("procv" "(" identifier ")" expression)
+      procv-exp
+    )
+    (expression ("(" expression expression ")") call-exp)
+    (expression ("newref" "(" expression ")") newref-exp)
+    (expression ("deref" "(" expression ")") deref-exp)
+    (expression ("setref" "(" expression "," expression ")") setref-exp)
+    (expression ("set" identifier "=" expression) assign-exp)
+    (expression
+      ("begin" expression (arbno ";" expression) "end")
+      begin-exp
+    )
+    (expression ("newarray" "(" (separated-list expression ",") ")") newarray-exp)
+    (expression ("arrayref" "(" expression "," expression ")") arrayref-exp)
+    (expression ("print" "(" expression ")") print-exp)
+  )
+)
+
+(sllgen:make-define-datatypes the-lexical-spec the-grammar)
+
+(define show-the-datatypes
+  (lambda ()
+    (sllgen:list-define-datatypes the-lexical-spec the-grammar)
+  )
+)
+
+(define scan&parse
+  (sllgen:make-string-parser the-lexical-spec the-grammar)
+)
+
+(define just-scan
+  (sllgen:make-string-scanner the-lexical-spec the-grammar)
+)
