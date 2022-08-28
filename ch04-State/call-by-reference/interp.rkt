@@ -18,7 +18,7 @@
   )
 )
 
-; Exp * Env -> ExpVal
+; Exp * Env -> Ref
 (define value-of-operand
   (lambda (exp env)
     (cases expression exp

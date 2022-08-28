@@ -22,7 +22,9 @@
 (define value-of-operand
   (lambda (exp env)
     (cases expression exp
+      (const-exp (num) (newref (value-of exp env)))
       (var-exp (var) (apply-env env var))
+      (proc-exp (var body) (newref (value-of exp env)))
       (else
         (newref (a-thunk exp env))
       )
@@ -51,7 +53,12 @@
           (let ([w (deref ref1)])
             (if (expval? w)
               w
-              (value-of-thunk w)
+              (let ([val1 (value-of-thunk w)])
+                (begin
+                  (setref! ref1 val1)
+                  val1
+                )
+              )
             )
           )
         )
