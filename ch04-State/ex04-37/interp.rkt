@@ -80,24 +80,21 @@
       (proc-exp (var body)
         (proc-val (procedure var body env))
       )
-      (procv-exp (var body)
-        (procv-val (procedure var body env))
-      )
       (call-exp (rator rand)
-        (let ([proc1 (value-of rator env)])
-          (cases expval proc1
-            (proc-val (proc1)
-              (let ([arg (value-of-operand rand env)])
-                (apply-procedure proc1 arg)
+        (let
+          (
+            [proc1 (expval->proc (value-of rator env))]
+            [
+              arg
+              (cases expression rand
+                (var-exp (var) (apply-env env var))
+                (else (eopl:error 'invalid-rand "rand must be var-exp"))
               )
-            )
-            (procv-val (proc1)
-              (let ([arg (value-of rand env)])
-                (apply-procedure proc1 (newref arg))
-              )
-            )
-            (else (eopl:error 'invalid-proc "proc1 must be proc-val; received proc1=~s" proc1))
+            ]
           )
+          (setref! arg (apply-procedure proc1 (newref (deref arg)))
+          )
+          (num-val 22)
         )
       )
       (newref-exp (exp1)
@@ -149,7 +146,7 @@
   )
 )
 
-; Proc * ExpVal -> ExpVal
+; Proc * Ref -> ExpVal
 (define apply-procedure
   (lambda (proc1 val)
     (cases proc proc1
