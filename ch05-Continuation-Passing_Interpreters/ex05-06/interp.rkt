@@ -37,7 +37,9 @@
     (cont continuation?)
   )
   (let2-exp2-cont
+    (var1 identifier?)
     (var2 identifier?)
+    (val1 expval?)
     (body expression?)
     (env environment?)
     (cont continuation?)
@@ -53,15 +55,21 @@
     (cont continuation?)
   )
   (let3-exp2-cont
+    (var1 identifier?)
     (var2 identifier?)
     (var3 identifier?)
+    (val1 expval?)
     (exp3 expression?)
     (body expression?)
     (env environment?)
     (cont continuation?)
   )
   (let3-exp3-cont
+    (var1 identifier?)
+    (var2 identifier?)
     (var3 identifier?)
+    (val1 expval?)
+    (val2 expval?)
     (body expression?)
     (env environment?)
     (cont continuation?)
@@ -148,38 +156,38 @@
         )
       )
       (let2-exp1-cont (var1 var2 exp2 body saved-env saved-cont)
-        (let ([new-env (extend-env var1 val saved-env)])
-          (value-of/k exp2
-            new-env
-            (let2-exp2-cont var2 body new-env saved-cont)
-          )
+        (value-of/k exp2
+          saved-env
+          (let2-exp2-cont var1 var2 val body saved-env saved-cont)
         )
       )
-      (let2-exp2-cont (var2 body saved-env saved-cont)
+      (let2-exp2-cont (var1 var2 val1 body saved-env saved-cont)
         (value-of/k body
-          (extend-env var2 val saved-env)
+          (extend-env var1 val1
+            (extend-env var2 val saved-env)
+          )
           saved-cont
         )
       )
       (let3-exp1-cont (var1 var2 var3 exp2 exp3 body saved-env saved-cont)
-        (let ([new-env (extend-env var1 val saved-env)])
-          (value-of/k exp2
-            new-env
-            (let3-exp2-cont var2 var3 exp3 body new-env saved-cont)
-          )
+        (value-of/k exp2
+          saved-env
+          (let3-exp2-cont var1 var2 var3 val exp3 body saved-env saved-cont)
         )
       )
-      (let3-exp2-cont (var2 var3 exp3 body saved-env saved-cont)
-        (let ([new-env (extend-env var2 val saved-env)])
-          (value-of/k exp3
-            new-env
-            (let3-exp3-cont var3 body new-env saved-cont)
-          )
+      (let3-exp2-cont (var1 var2 var3 val1 exp3 body saved-env saved-cont)
+        (value-of/k exp3
+          saved-env
+          (let3-exp3-cont var1 var2 var3 val1 val body saved-env saved-cont)
         )
       )
-      (let3-exp3-cont (var3 body saved-env saved-cont)
+      (let3-exp3-cont (var1 var2 var3 val1 val2 body saved-env saved-cont)
         (value-of/k body
-          (extend-env var3 val saved-env)
+          (extend-env var1 val1
+            (extend-env var2 val2
+              (extend-env var3 val saved-env)
+            )
+          )
           saved-cont
         )
       )
