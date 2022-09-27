@@ -37,7 +37,9 @@
     (cont continuation?)
   )
   (let2-exp2-cont
+    (var1 identifier?)
     (var2 identifier?)
+    (val1 expval?)
     (body expression?)
     (env environment?)
     (cont continuation?)
@@ -92,16 +94,16 @@
         )
       )
       (let2-exp1-cont (var1 var2 exp2 body saved-env saved-cont)
-        (let ([new-env (extend-env var1 val saved-env)])
-          (value-of/k exp2
-            new-env
-            (let2-exp2-cont var2 body new-env saved-cont)
-          )
+        (value-of/k exp2
+          saved-env
+          (let2-exp2-cont var1 var2 val body saved-env saved-cont)
         )
       )
-      (let2-exp2-cont (var2 body saved-env saved-cont)
+      (let2-exp2-cont (var1 var2 val1 body saved-env saved-cont)
         (value-of/k body
-          (extend-env var2 val saved-env)
+          (extend-env var1 val1
+            (extend-env var2 val saved-env)
+          )
           saved-cont
         )
       )

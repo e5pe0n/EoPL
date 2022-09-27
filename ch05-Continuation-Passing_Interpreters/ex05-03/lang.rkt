@@ -40,7 +40,7 @@
       let-exp
     )
     (expression
-      ("let2" identifier "=" expression "," identifier "=" expression "in" expression)
+      ("let2" identifier "=" expression identifier "=" expression "in" expression)
       let2-exp
     )
     (expression
