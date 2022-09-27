@@ -22,4 +22,4 @@
   in -(-(a, b), c)
 "))
 ; End of computation.
-; #(struct:num-val 33)
+; #(struct:num-val 21)
