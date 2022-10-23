@@ -25,7 +25,7 @@
   )
   (extend-env-rec
     (p-name identifier?)
-    (b-var identifier?)
+    (b-vars (list-of identifier?))
     (body expression?)
     (env environment?)
   )
@@ -55,10 +55,10 @@
           (apply-env saved-env search-var)
         )
       )
-      (extend-env-rec (p-name b-var p-body saved-env)
+      (extend-env-rec (p-name b-vars p-body saved-env)
         (if (eqv? p-name search-var)
           (newref
-            (proc-val (procedure b-var p-body env))
+            (proc-val (procedure b-vars p-body env))
           )
           (apply-env saved-env search-var)
         )
