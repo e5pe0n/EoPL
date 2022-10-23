@@ -44,9 +44,6 @@
       proc-exp
     )
     (expression ("(" expression expression ")") call-exp)
-    (expression ("newref" "(" expression ")") newref-exp)
-    (expression ("deref" "(" expression ")") deref-exp)
-    (expression ("setref" "(" expression "," expression ")") setref-exp)
     (expression ("set" identifier "=" expression) assign-exp)
     (expression
       ("begin" expression (arbno ";" expression) "end")

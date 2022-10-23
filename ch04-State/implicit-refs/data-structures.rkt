@@ -6,11 +6,21 @@
 
 (provide (all-defined-out))
 
+; ExpVal = Int + Bool + Proc
+; DenVal = Ref(ExpVal)
+
+; SchemeVal -> Bool
+(define reference?
+  (lambda (v)
+    (integer? v)
+  )
+)
+
 (define-datatype environment environment?
   (empty-env)
   (extend-env
     (saved-var symbol?)
-    (saved-val s-val?)
+    (saved-val reference?)
     (saved-env environment?)
   )
   (extend-env-rec
@@ -83,9 +93,6 @@
   (proc-val
     (proc1 proc?)
   )
-  (ref-val
-    (num number?)
-  )
 )
 
 ; ExpVal -> Number
@@ -118,16 +125,6 @@
   )
 )
 
-; ExpVal -> Ref
-(define expval->ref
-  (lambda (val)
-    (cases expval val
-      (ref-val (num) num)
-      (else report-expval-extractor-error 'ref val)
-    )
-  )
-)
-
 
 ; () -> Sto
 (define empty-store
@@ -146,13 +143,6 @@
 (define initialize-store!
   (lambda ()
     (set! the-store (list (num-val 10) (num-val 5) (num-val 1)))
-  )
-)
-
-; SchemeVal -> Bool
-(define reference?
-  (lambda (v)
-    (integer? v)
   )
 )
 

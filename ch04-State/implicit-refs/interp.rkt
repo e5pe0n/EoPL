@@ -64,21 +64,6 @@
           (apply-procedure proc1 arg)
         )
       )
-      (newref-exp (exp1)
-        (ref-val (newref (value-of exp1 env)))
-      )
-      (deref-exp (exp1)
-        (deref (expval->ref (value-of exp1 env)))
-      )
-      (setref-exp (exp1 exp2)
-        (begin
-          (setref!
-            (expval->ref (value-of exp1 env))
-            (value-of exp2 env)
-          )
-          (num-val 23)
-        )
-      )
       (assign-exp (var exp1)
         (begin
           (setref!
