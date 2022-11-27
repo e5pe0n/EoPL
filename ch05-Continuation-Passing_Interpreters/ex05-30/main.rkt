@@ -11,31 +11,31 @@
   )
 )
 
-(print
-  (run "
+(println (run "
     let a = 3
     in let p = proc (x) -(x, a)
       in let a = 5
         in -(a, (p 2))
-  ")
-) ; #(struct:num-val 8)
+"))
+; End of Computation.
+; #(struct:num-val 8)
 
-(print
-  (run "
+(println (run "
     let a = 3
     in let p = proc (z) a
     in let f = proc (x) (p 0)
     in let a = 5
     in (f 2)
-  ")
-) ; #(struct:num-val 5)
+"))
+; End of Computation.
+; #(struct:num-val 5)
 
-(print
-  (run "
+(println (run "
     let a = 3
     in let p = proc (z) a
     in let f = proc (a) (p 0)
     in let a = 5
     in (f 2)
-  ")
-) ; #(struct:num-val 2)
+"))
+; End of Computation.
+; #(struct:num-val 2)
