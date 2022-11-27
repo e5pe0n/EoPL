@@ -237,10 +237,10 @@
           (proc-val (procedure vars body env))
         )
       )
-      (letrec-exp (p-name b-var p-body letrec-body)
+      (letrec-exp (p-name b-vars p-body letrec-body)
         (value-of/k
           letrec-body
-          (extend-env-rec p-name b-var p-body env)
+          (extend-env-rec p-name b-vars p-body env)
           cont
         )
       )
