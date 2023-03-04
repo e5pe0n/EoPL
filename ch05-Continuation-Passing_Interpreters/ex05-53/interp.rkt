@@ -291,7 +291,11 @@
   (lambda (cont val th-id parent-th-id)
     (if (time-expired?)
       (begin
-        (place-on-ready-queue! (lambda () (apply-cont cont val th-id parent-th-id)))
+        (place-on-ready-queue!
+          (a-thread th-id
+            (lambda () (apply-cont cont val th-id parent-th-id))
+          )
+        )
         (run-next-thread)
       )
       (begin
@@ -483,8 +487,7 @@
                 [child-th-id (get-next-th-id)]
               )
               (place-on-ready-queue!
-                (a-thread
-                  child-th-id
+                (a-thread child-th-id
                   (lambda ()
                     (apply-procedure/k proc1
                       (list (num-val child-th-id))
@@ -508,13 +511,17 @@
           (wait-cont (saved-cont)
             (wait-for-mutex
               (expval->mutex val)
-              (lambda () (apply-cont saved-cont (num-val 52) th-id parent-th-id))
+              (a-thread th-id
+                (lambda () (apply-cont saved-cont (num-val 52) th-id parent-th-id))
+              )
             )
           )
           (signal-cont (saved-cont)
             (signal-mutex
               (expval->mutex val)
-              (lambda () (apply-cont saved-cont (num-val 53) th-id parent-th-id))
+              (a-thread th-id
+                (lambda () (apply-cont saved-cont (num-val 53) th-id parent-th-id))
+              )
             )
           )
         )
@@ -658,7 +665,11 @@
       )
       (yield-exp ()
         (begin
-          (place-on-ready-queue! (lambda () (apply-cont cont (num-val 99) th-id parent-th-id)))
+          (place-on-ready-queue!
+            (a-thread th-id
+              (lambda () (apply-cont cont (num-val 99) th-id parent-th-id))
+            )
+          )
           (run-next-thread)
         )
       )
