@@ -268,8 +268,6 @@
     (proc1 procedure?)
     (th-id integer?)
     (parent-th-id integer?)
-    (msg-queue list?)
-    (cont continuation?)
   )
 )
 

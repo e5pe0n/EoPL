@@ -11,8 +11,8 @@
 (define run-thread
   (lambda (th)
     (cases thread th
-      (a-thread (proc1 th-id parent-th-id msg-queue cont)
-        (proc1 th-id parent-th-id msg-queue cont)
+      (a-thread (proc1 th-id parent-th-id)
+        (proc1)
       )
     )
   )
@@ -24,6 +24,7 @@
 (define the-time-remaining 'uninitialized)
 
 (define the-next-th-id 'uninitialized)
+(define the-msg-queues '())
 
 
 (define empty-queue
@@ -125,7 +126,7 @@
 (define match-th
   (lambda (th th-id)
     (cases thread th
-      (a-thread (proc1 th-id1 parent-th-id1 msg-queue1 cont1)
+      (a-thread (proc1 th-id1 parent-th-id1)
         (= th-id th-id1)
       )
     )
@@ -144,38 +145,42 @@
   )
 )
 
+; () -> ()
+(define new-msg-queue
+  (lambda ()
+    (set! the-msg-queues (append the-msg-queues (list (empty-queue))))
+  )
+)
+
+; Int -> Listof(ExpVal)
+(define get-msg-queue
+  (lambda (th-id)
+    (list-ref the-msg-queues th-id)
+  )
+)
+
 ; Int * ExpVal -> Unspecified
 (define send-msg
   (lambda (th-id msg)
-    (set! the-ready-queue
-      (let f ([q the-ready-queue])
-        (if (null? q)
-          q
-          (cons
-            (let ([th (car q)])
-              (cases thread th
-                (a-thread (proc1 th-id1 parent-th-id1 msg-queue1 cont1)
-                  (if (= th-id1 th-id)
-                    (a-thread
-                      (lambda (th-id2 parent-th-id2 msg-queue2 cont2)
-                        (proc1 th-id2 parent-th-id2 msg-queue2 cont2)
-                      )
-                      th-id1 parent-th-id1 (enqueue-msg msg-queue1 msg) cont1
-                    )
-                    th
-                  )
-                )
-              )
-            )
-            (f (cdr q))
-          )
+    (set! the-msg-queues
+      (let f ([i th-id] [qs the-msg-queues])
+        (if (zero? i)
+          (cons (enqueue-msg (car qs) msg) (cdr qs))
+          (cons (car qs) (f (- i 1) (cdr qs)))
         )
       )
     )
   )
 )
 
+; () -> ()
+(define initialize-the-msg-queues!
+  (lambda ()
+    (new-msg-queue)
+  )
+)
 
+; () -> ()
 (define initialize-the-stores!
   (lambda ()
     (new-store)
@@ -187,29 +192,27 @@
   (lambda (timeslice pgm)
     (initialize-scheduler! timeslice)
     (initialize-next-th-id! 0)
+    (initialize-the-msg-queues!)
     (initialize-the-stores!)
     (cases program pgm
       (a-program (exp1)
         (let ([th-id (get-next-th-id)])
-          (value-of/k exp1 (init-env) (end-main-thread-cont) th-id th-id (empty-queue)
-          )
+          (value-of/k exp1 (init-env) (end-main-thread-cont) th-id th-id)
         )
       )
     )
   )
 )
 
-; Cont * ExpVal * Int * Int * Listof(ExpVal) -> FinalAnswer
+; Cont * ExpVal * Int * Int -> FinalAnswer
 (define apply-cont
-  (lambda (cont val th-id parent-th-id msg-queue)
+  (lambda (cont val th-id parent-th-id)
     (if (time-expired?)
       (begin
         (place-on-ready-queue!
           (a-thread
-            (lambda (th-id1 parent-th-id1 msg-queue1 cont1)
-              (apply-cont cont1 val th-id1 parent-th-id1 msg-queue1)
-            )
-            th-id parent-th-id msg-queue cont
+            (lambda () (apply-cont cont val th-id parent-th-id))
+            th-id parent-th-id
           )
         )
         (run-next-thread)
@@ -228,7 +231,6 @@
               (bool-val (zero? (expval->num val)))
               th-id
               parent-th-id
-              msg-queue
             )
           )
           (let-exp-cont (vars exps rvars vals body saved-env saved-cont)
@@ -243,21 +245,19 @@
                 saved-cont
                 th-id
                 parent-th-id
-                msg-queue
               )
               (value-of/k (car exps)
                 saved-env
                 (let-exp-cont (cdr vars) (cdr exps) (cons (car vars) rvars) (cons val vals) body saved-env saved-cont)
                 th-id
                 parent-th-id
-                msg-queue
               )
             )
           )
           (if-test-cont (exp2 exp3 saved-env saved-cont)
             (if (expval->bool val)
-              (value-of/k exp2 saved-env saved-cont th-id parent-th-id msg-queue)
-              (value-of/k exp3 saved-env saved-cont th-id parent-th-id msg-queue)
+              (value-of/k exp2 saved-env saved-cont th-id parent-th-id)
+              (value-of/k exp3 saved-env saved-cont th-id parent-th-id)
             )
           )
           (binary-op1-cont (op exp2 saved-env saved-cont)
@@ -265,7 +265,6 @@
               (binary-op2-cont op val saved-cont)
               th-id
               parent-th-id
-              msg-queue
             )
           )
           (binary-op2-cont (op val1 saved-cont)
@@ -274,14 +273,13 @@
                 (num-val (op num1 num2))
                 th-id
                 parent-th-id
-                msg-queue
               )
             )
           )
           (rator-cont (rands saved-env saved-cont)
             (let ([proc1 (expval->proc val)])
               (if (null? rands)
-                (apply-procedure/k proc1 '() saved-cont th-id parent-th-id msg-queue)
+                (apply-procedure/k proc1 '() saved-cont th-id parent-th-id)
                 (value-of/k (car rands) saved-env
                   (let ([rds (cdr rands)])
                     (if (null? rds)
@@ -291,7 +289,6 @@
                   )
                   th-id
                   parent-th-id
-                  msg-queue
                 )
               )
             )
@@ -313,18 +310,16 @@
               )
               th-id
               parent-th-id
-              msg-queue
             )
           )
           (rand2-cont (proc1 saved-cont)
-            (apply-procedure/k proc1 (list val) saved-cont th-id parent-th-id msg-queue)
+            (apply-procedure/k proc1 (list val) saved-cont th-id parent-th-id)
           )
           (cons1-cont (exp2 saved-env saved-cont)
             (value-of/k exp2 saved-env
               (cons2-cont val saved-env saved-cont)
               th-id
               parent-th-id
-              msg-queue
             )
           )
           (cons2-cont (val1 saved-env saved-cont)
@@ -333,7 +328,6 @@
                 (list-val (cons any1 any2))
                 th-id
                 parent-th-id
-                msg-queue
               )
             )
           )
@@ -342,7 +336,6 @@
               (bool-val (null? (expval->list val)))
               th-id
               parent-th-id
-              msg-queue
             )
           )
           (car-cont (saved-env saved-cont)
@@ -351,7 +344,6 @@
                 (any->expval (car list1))
                 th-id
                 parent-th-id
-                msg-queue
               )
             )
           )
@@ -361,7 +353,6 @@
                 (any->expval (cdr list1))
                 th-id
                 parent-th-id
-                msg-queue
               )
             )
           )
@@ -370,7 +361,6 @@
               (list2-cont val saved-env saved-cont)
               th-id
               parent-th-id
-              msg-queue
             )
           )
           (list2-cont (val1 saved-env saved-cont)
@@ -378,30 +368,28 @@
               (list-val (cons (expval->any val1) (expval->list val)))
               th-id
               parent-th-id
-              msg-queue
             )
           )
           (set-rhs-cont (saved-env var saved-cont)
             (begin
               (setref! (apply-env saved-env var) val th-id)
-              (apply-cont saved-cont (num-val 27) th-id parent-th-id msg-queue)
+              (apply-cont saved-cont (num-val 27) th-id parent-th-id)
             )
           )
           (begin-cont (exps saved-env saved-cont)
             (if (null? exps)
-              (apply-cont saved-cont val th-id parent-th-id msg-queue)
+              (apply-cont saved-cont val th-id parent-th-id)
               (value-of/k (car exps) saved-env
                 (begin-cont (cdr exps) saved-env saved-cont)
                 th-id
                 parent-th-id
-                msg-queue
               )
             )
           )
           (print-cont (saved-cont)
             (begin
               (println val)
-              (apply-cont saved-cont (num-val 26) th-id parent-th-id msg-queue)
+              (apply-cont saved-cont (num-val 26) th-id parent-th-id)
             )
           )
           (spawn-cont (saved-cont)
@@ -417,23 +405,23 @@
                 ]
                 [child-th-id (get-next-th-id)]
               )
+              (new-msg-queue)
               (new-store)
               (set-store! (copy-list (get-store th-id)) child-th-id)
               (place-on-ready-queue!
                 (a-thread
-                  (lambda (th-id1 parent-th-id1 msg-queue1 cont1)
+                  (lambda ()
                     (apply-procedure/k proc1
                       (list (num-val child-th-id))
-                      cont1
+                      (end-subthread-cont)
                       child-th-id
                       th-id
-                      msg-queue1
                     )
                   )
-                  child-th-id th-id (empty-queue) (end-subthread-cont)
+                  child-th-id th-id
                 )
               )
-              (apply-cont saved-cont child-th-id th-id parent-th-id msg-queue)
+              (apply-cont saved-cont child-th-id th-id parent-th-id)
             )
           )
           (end-main-thread-cont ()
@@ -448,7 +436,6 @@
               (bool-val (kill-th! (expval->num val)))
               th-id
               parent-th-id
-              msg-queue
             )
           )
           (send1-cont (exp2 saved-env saved-cont)
@@ -456,7 +443,6 @@
               (send2-cont val saved-cont)
               th-id
               parent-th-id
-              msg-queue
             )
           )
           (send2-cont (val1 saved-cont)
@@ -466,7 +452,6 @@
                 (num-val 7)
                 th-id
                 parent-th-id
-                msg-queue
               )
             )
           )
@@ -477,22 +462,21 @@
   )
 )
 
-; Exp x Env * Cont * Int * Int * Listof(ExpVal) -> FinalAnswer
+; Exp x Env * Cont * Int * Int -> FinalAnswer
 (define value-of/k
-  (lambda (exp env cont th-id parent-th-id msg-queue)
+  (lambda (exp env cont th-id parent-th-id)
     (cases expression exp
       (const-exp (num)
-        (apply-cont cont (num-val num) th-id parent-th-id msg-queue)
+        (apply-cont cont (num-val num) th-id parent-th-id)
       )
       (var-exp (var)
-        (apply-cont cont (deref (apply-env env var) th-id) th-id parent-th-id msg-queue)
+        (apply-cont cont (deref (apply-env env var) th-id) th-id parent-th-id)
       )
       (proc-exp (vars body)
         (apply-cont cont
           (proc-val (procedure vars body env))
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (letrec-exp (p-name b-vars p-body letrec-body)
@@ -502,20 +486,18 @@
           cont
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (zero?-exp (exp1)
-        (value-of/k exp1 env (zero1-cont cont) th-id parent-th-id msg-queue)
+        (value-of/k exp1 env (zero1-cont cont) th-id parent-th-id)
       )
       (let-exp (vars exps body)
         (if (null? vars)
-          (value-of/k body env cont th-id parent-th-id msg-queue)
+          (value-of/k body env cont th-id parent-th-id)
           (value-of/k (car exps) env
             (let-exp-cont (cdr vars) (cdr exps) (list (car vars)) '() body env cont)
             th-id
             parent-th-id
-            msg-queue
           )
         )
       )
@@ -524,7 +506,6 @@
           (if-test-cont exp2 exp3 env cont)
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (diff-exp (exp1 exp2)
@@ -532,7 +513,6 @@
           (binary-op1-cont - exp2 env cont)
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (mul-exp (exp1 exp2)
@@ -540,7 +520,6 @@
           (binary-op1-cont * exp2 env cont)
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (call-exp (rator rands)
@@ -548,18 +527,16 @@
           (rator-cont rands env cont)
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (emptylist-exp ()
-        (apply-cont cont (list-val '()) th-id parent-th-id msg-queue)
+        (apply-cont cont (list-val '()) th-id parent-th-id)
       )
       (cons-exp (exp1 exp2)
         (value-of/k exp1 env
           (cons1-cont exp2 env cont)
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (null?-exp (exp1)
@@ -567,7 +544,6 @@
           (null?-cont env cont)
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (car-exp (exp1)
@@ -575,7 +551,6 @@
           (car-cont env cont)
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (cdr-exp (exp1)
@@ -583,17 +558,15 @@
           (cdr-cont env cont)
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (list-exp (exps)
         (if (null? exps)
-          (apply-cont cont (list-val '()) th-id parent-th-id msg-queue)
+          (apply-cont cont (list-val '()) th-id parent-th-id)
           (value-of/k (car exps) env
             (list1-cont (cdr exps) env cont)
             th-id
             parent-th-id
-            msg-queue
           )
         )
       )
@@ -602,7 +575,6 @@
           (set-rhs-cont env var cont)
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (begin-exp (exp1 exps)
@@ -610,46 +582,46 @@
           (begin-cont exps env cont)
           th-id
           parent-th-id
-          msg-queue
         )
       )
       (print-exp (exp1)
-        (value-of/k exp1 env (print-cont cont) th-id parent-th-id msg-queue)
+        (value-of/k exp1 env (print-cont cont) th-id parent-th-id)
       )
       (spawn-exp (exp1)
-        (value-of/k exp1 env (spawn-cont cont) th-id parent-th-id msg-queue)
+        (value-of/k exp1 env (spawn-cont cont) th-id parent-th-id)
       )
       (yield-exp ()
         (begin
           (place-on-ready-queue!
             (a-thread
-              (lambda (th-id1 parent-th-id1 msg-queue1 cont1)
-                (apply-cont cont1 (num-val 99) th-id1 parent-th-id1 msg-queue1))
-              th-id parent-th-id msg-queue cont
+              (lambda ()
+                (apply-cont cont (num-val 99) th-id parent-th-id))
+              th-id parent-th-id
             )
           )
           (run-next-thread)
         )
       )
       (kill-exp (exp1)
-        (value-of/k exp1 env (kill-cont cont) th-id parent-th-id msg-queue)
+        (value-of/k exp1 env (kill-cont cont) th-id parent-th-id)
       )
       (send-exp (exp1 exp2)
-        (value-of/k exp1 env (send1-cont exp2 env cont) th-id parent-th-id msg-queue)
+        (value-of/k exp1 env (send1-cont exp2 env cont) th-id parent-th-id)
       )
       (recv-exp ()
-        (if (null? msg-queue)
-          (begin
-            (place-on-ready-queue!
-              (a-thread
-                (lambda (th-id1 parent-th-id1 msg-queue1 cont1)
-                  (value-of/k exp env cont1 th-id1 parent-th-id1 msg-queue1))
-                th-id parent-th-id msg-queue cont
+        (let ([msg-queue (get-msg-queue th-id)])
+          (if (null? msg-queue)
+            (begin
+              (place-on-ready-queue!
+                (a-thread
+                  (lambda () (value-of/k exp env cont th-id parent-th-id))
+                  th-id parent-th-id
+                )
               )
+              (run-next-thread)
             )
-            (run-next-thread)
+            (apply-cont cont (car msg-queue) th-id parent-th-id)
           )
-          (apply-cont cont (car msg-queue) th-id parent-th-id (cdr msg-queue))
         )
       )
     )
@@ -659,7 +631,7 @@
 
 ; Proc * Listof(ExpVal) * Cont * Int * Int -> FinalAnswer
 (define apply-procedure/k
-  (lambda (proc1 vals cont th-id parent-th-id msg-queue)
+  (lambda (proc1 vals cont th-id parent-th-id)
     (cases proc proc1
       (procedure (vars body saved-env)
         (value-of/k body
@@ -670,7 +642,6 @@
           cont
           th-id
           parent-th-id
-          msg-queue
         )
       )
     )
