@@ -1,3 +1,2 @@
 #!bin/bash
-echo 'export EDITOR=vim' >> ~/.bashrc
-raco pkg install racket-langserver
+raco pkg install --auto racket-langserver

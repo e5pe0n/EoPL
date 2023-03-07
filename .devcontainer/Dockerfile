@@ -4,6 +4,8 @@
 ARG VARIANT="focal"
 FROM mcr.microsoft.com/vscode/devcontainers/base:0-${VARIANT}
 
+ENV EDITOR=vim
+
 # [Optional] Uncomment this section to install additional OS packages.
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
@@ -11,4 +13,5 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     mit-scheme \
     chicken-bin \
     racket \
+    racket-doc \
     vim
