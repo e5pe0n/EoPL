@@ -5,12 +5,12 @@
   "build": {
     "dockerfile": "Dockerfile",
     // Update 'VARIANT' to pick an Ubuntu version: focal, bionic
-    "args": { "VARIANT": "focal" }
+    "args": {
+      "VARIANT": "focal"
+    }
   },
-
   // Set *default* container specific settings.json values on container create.
   "settings": {},
-
   // Add the IDs of extensions you want installed when the container is created.
   "extensions": [
     "donjayamanne.git-extension-pack",
@@ -22,13 +22,10 @@
     "oderwat.indent-rainbow",
     "sjhuangx.vscode-scheme"
   ],
-
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
-
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "sh /workspaces/EoPL/.devcontainer/setup.sh"
-
+  "postCreateCommand": "sh /workspaces/EoPL/.devcontainer/setup.sh",
   // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-  // "remoteUser": "vscode"
+  "remoteUser": "root"
 }
