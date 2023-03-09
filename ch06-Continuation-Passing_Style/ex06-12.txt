@@ -1,0 +1,5 @@
+1. -((f -(x, 1)), 1)    # no
+2. (f -(-(x, y), 1))    # no
+3. if zero?(x) then -(x, y) else -(-(x, y), 1)  # yes
+4. let x = proc (y) (y x) in -(x, 3)    # yes
+5. let f = proc (x) x in (f 3)  # no
