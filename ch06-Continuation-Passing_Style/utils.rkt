@@ -31,8 +31,8 @@
         lst1
         (let ([head (car lst1)] [tail (cdr lst1)])
           (if (pred head)
-            (f tail)
             (cons head (f tail))
+            (f tail)
           )
         )
       )

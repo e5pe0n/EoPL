@@ -196,7 +196,7 @@
     (or
       (let ([org-len (length the-ready-queue)])
         (set! the-ready-queue
-          (filter the-ready-queue (lambda (th) (match-th th th-id)))
+          (filter the-ready-queue (lambda (th) (not (match-th th th-id))))
         )
         (not (= org-len (length the-ready-queue)))
       )
