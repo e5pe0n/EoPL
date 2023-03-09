@@ -1,0 +1,4 @@
+- associativity
+- identity
+    - multiplication: 1
+    - addition: 0
