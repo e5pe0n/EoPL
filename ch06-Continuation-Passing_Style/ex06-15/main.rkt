@@ -200,4 +200,4 @@
   in (every proc(n cont) (cont greater?(n, 5)) list(6, 7, 8, 9))
 "))
 ; "End of Computation."
-; #(struct:num-val 0)
+; #(struct:num-val 1)
