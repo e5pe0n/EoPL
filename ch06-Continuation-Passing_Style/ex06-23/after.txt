@@ -1,0 +1,23 @@
+use reference to avoid duplicate copies
+
+#(struct:cps-if-exp
+    #(struct:cps-zero?-exp #(struct:cps-const-exp 0))
+    #(struct:cps-if-exp
+        #(struct:cps-zero?-exp #(struct:cps-const-exp 1))
+        #(struct:cps-call-exp
+            #(struct:cps-const-exp 0) (#(struct:cps-const-exp 100))
+        )
+        #(struct:cps-call-exp
+            #(struct:cps-const-exp 0) (#(struct:cps-const-exp 200))
+        )
+    )
+    #(struct:cps-if-exp
+        #(struct:cps-zero?-exp #(struct:cps-const-exp 2))
+        #(struct:cps-call-exp
+            #(struct:cps-const-exp 0) (#(struct:cps-const-exp 300))
+        )
+        #(struct:cps-call-exp
+            #(struct:cps-const-exp 0) (#(struct:cps-const-exp 400))
+        )
+    )
+)
