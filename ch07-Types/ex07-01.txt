@@ -1,0 +1,13 @@
+1. int -> int
+2. (t -> int) -> (int -> int)
+3. t -> t
+4. (t1 -> t2) -> (t1 -> t2)
+5. int -> t
+6. (t1 -> t2) -> t2
+7. bool -> int
+8. bool -> (t1 -> no type)
+9. int
+10. int
+11. (t1 -> int) -> ((int -> t3) -> ((int -> bool) -> (t1 -> no type)))
+12. int -> ((int -> bool) -> ((int -> bool) -> no type) -> no type)
+13. (t1 -> (t2 -> t3)) -> (t2 -> t3)
