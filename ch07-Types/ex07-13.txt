@@ -1,0 +1,55 @@
+1.
+x = tx
+let x = 4 in (x 3) = t0
+(x 3) = t1
+
+tx = int = (int -> t1)  ; no such type exists
+
+
+2.
+z = tz
+f = tf
+x = tx
+let f = proc(z) z in proc(x) -((f x), 1) = t0
+proc(z) z = t1
+proc(x) -((f x), 1) = t2
+-((f x), 1) = t3
+(f x) = t4
+
+t1 = (tz -> tz)
+t4 = int
+tf = (tx -> int)
+t3 = int
+
+tf = (tz -> tz)
+   = (tx -> int)
+   = (int -> int)
+tx = tz = int
+t0 = t2
+   = (tx -> int)
+   = (int -> int)
+
+
+3.
+p = tp
+let p = zero?(1) in if p then 88 else 99 = t0
+zero?(1) = t1
+if p then 88 else 99 = t2
+
+t1 = bool
+tp = bool
+t2 = int
+t0 = t2
+   = int
+
+
+4.
+p = tp
+z = tz
+let p = proc(z) z in if p then 88 else 99 = t0
+proc(z) z = t1
+if p then 88 else 99 = t2
+
+t1 = (tz -> tz) = tp
+tp = bool = (tz -> tz)  ; no such type exists
+
