@@ -1,0 +1,144 @@
+1.
+x = tx
+proc(x) -(x, 3) = tf
+-(x, 3) = t1
+
+t1 = int
+tx = int
+tf = int -> int
+
+
+2.
+f = tf
+x = tx
+proc(f) proc(x) -((f x), 1) = t0
+proc(x) -((f x), 1) = t1
+-((f x), 1) = t2
+(f x) = t3
+
+t3 = int
+t2 = int
+t1 = (tx -> int)
+t0 = tf -> (tx -> int)
+tf = (tx -> int)
+
+t0 = ((tx -> int) -> (tx -> int))
+
+
+3.
+x = tx
+proc(x) x = t0
+
+t0 = (tx -> tx)
+
+
+4.
+x = tx
+y = ty
+proc(x) proc(y) (x y) = t0
+proc(y) (x y) = t1
+(x y) = t2
+
+t1 = (ty -> t2)
+t0 = (tx -> (ty -> t2))
+
+
+5.
+x = tx
+proc(x) (x 3) = t0
+(x 3) = t1
+
+tx = (int -> t1)
+t0 = (tx -> int)
+   = ((int -> t1) -> int)
+
+
+6.
+x = tx
+proc(x) (x x) = t0
+(x x) = t1
+
+tx = (tx -> t1) ; no such type exists
+t0 = (tx -> t1)
+
+
+7.
+x = tx
+proc(x) if x then 88 else 99 = t0
+if x then 88 else 99 = t1
+
+tx = bool
+t0 = (tx -> t1)
+   = (bool -> t1)
+
+
+8.
+x = tx
+y = ty
+proc(x) proc(y) if x then y else 99 = t0
+proc(y) if x then y else 99 = t1
+if x then y else 99 = t2
+
+tx = bool
+ty = int
+t1 = (int -> int)
+t0 = (bool -> (int -> int))
+
+
+9.
+p = tp
+(proc(p) if p then 88 else 99 33) = t0
+proc(p) if p then 88 else 99 = t1
+if p then 88 else 99 = t2
+
+33 = tp = int
+
+t2 = int
+t1 = (bool -> int)
+tp = bool = int  ; no such type exists
+
+
+10.
+p = tp
+z = tz
+(proc(p) if p then 88 else 99 proc(z) z) = t0
+proc(p) if p then 88 else 99 = t1
+if p then 88 else 99 = t2
+proc(z) z = t3
+
+t3 = (tz -> tz)
+t1 = (tp -> t2)
+
+t1 = (tp -> int)
+tp = bool = (tz -> tz)  ; no such type exists
+
+
+11.
+f = tf
+g = tg
+p = tp
+x = tx
+proc(f) proc(g) proc(p) proc(x) if (p (f x)) then (g 1) else -((f x), 1) = t0
+proc(g) proc(p) proc(x) if (p (f x)) then (g 1) else -((f x), 1) = t1
+proc(p) proc(x) if (p (f x)) then (g 1) else -((f x), 1) = t2
+proc(x) if (p (f x)) then (g 1) else -((f x), 1) = t3
+if (p (f x)) then (g 1) else -((f x), 1) = t4
+(p (f x)) = t5
+(g 1) = t6
+-((f x), 1) = t7
+(f x) = t8
+
+t8 = int
+tf = (int -> int)
+t5 = bool
+tp = (int -> bool)
+tg = (int -> int)
+t4 = int
+t3 = (tx -> int)
+t2 = (tp -> (tx -> int))
+   = ((int -> bool) -> (tx -> int))
+t1 = (tg -> t2)
+   = ((int -> int) -> ((int -> bool) -> (tx -> int)))
+t0 = (tf -> t1)
+   = ((int -> int) -> ((int -> int) -> ((int -> bool) -> (tx -> int))))
+
