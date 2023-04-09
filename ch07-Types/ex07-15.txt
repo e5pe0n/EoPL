@@ -1,0 +1,74 @@
+1.
+f = tf
+x = tx
+letrec ? f (x: ?) = if zero?(x) then 0 else -((f -(x, 1)), -2) in f = t0
+f (x: ?) = if zero?(x) then 0 else -((f -(x, 1)), -2) = t1
+zero?(x) = t2
+-((f -(x, 1)), -2) = t2
+(f -(x, 1)) = t3
+-(x, 1) = t4
+
+t4 = int
+tx = int
+tf = (int -> int) = t0
+
+
+2.
+letrec ? even(x: ?) = if zero?(x) then 1 else (odd -(x, 1))
+       ? odd(x: ?) = if zero?(x) then 0 else (even -(x, 1))
+in (odd 13) = t0
+
+x = tx
+y = ty
+letrec ? even(x: ?) = if zero?(x) then 1 else (odd -(x, 1))
+       ? odd(y: ?) = if zero?(y) then 0 else (even -(y, 1))
+in (odd 13) = t0
+even(x: ?) = if zero?(x) then 1 else (odd -(x, 1)) = t1
+zero?(x) = t2
+(odd -(x, 1)) = t3
+-(x, 1) = t4
+odd(y: ?) = if zero?(y) then 0 else (even -(y, 1)) = t5
+zero?(y) = t6
+(even -(y, 1)) = t7
+-(y, 1) = t8
+
+ty = int
+tx = int
+t3 = (int -> int)
+t1 = (int -> int)
+t7 = (int -> int)
+t5 = (int -> int)
+t0 = int
+
+
+3.
+x = tx
+y = ty
+odd = t_odd
+letrec ? even(odd: ?) = proc(x) if zero?(x)
+                                then 1
+                                else (odd -(x, 1))
+in letrec ? odd(y: ?) = if zero?(y)
+                        then 0
+                        else ((even odd) -(y, 1))
+in (odd 13) = t0
+
+even(odd: ?) = proc(x) if zero?(x) then 1 else (odd -(x, 1)) = t1
+if zero?(x) then 1 else (odd -(x, 1)) = t2
+zero?(x) = t3
+(odd -(x, 1)) = t4
+-(x, 1) = t5
+odd(y: ?) = if zero?(y) then 0 else ((even odd) -(y, 1)) = t6
+zero?(y) = t7
+((even odd) -(y, 1)) = t8
+(even odd) = t9
+-(y, 1) = t10
+
+t10 = int
+ty = int
+t9 = int
+t6 = (int -> int)
+tx = int
+t1 = ((int -> int) -> (tx -> int))
+   = ((int -> int) -> (int -> int))
+t0 = int
