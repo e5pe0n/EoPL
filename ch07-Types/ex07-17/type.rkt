@@ -21,7 +21,7 @@
     (cases program pgm
       (a-program (exp1)
         (begin
-          (init-sn)
+          (init-sn!)
           (cases answer (type-of exp1 (init-tenv) (empty-subst))
             (an-answer (ty subst)
               (apply-subst-to-type ty subst)
@@ -376,17 +376,15 @@
 ; Serial Number = Int
 (define sn 'uninitialized)
 
-(define init-sn
+(define init-sn!
   (lambda () (set! sn 0))
 )
 
 ; () -> Type
 (define fresh-tvar-type
-  (let ([sn 0])
-    (lambda ()
-      (set! sn (+ sn 1))
-      (tvar-type sn)
-    )
+  (lambda ()
+    (set! sn (+ sn 1))
+    (tvar-type sn)
   )
 )
 
