@@ -376,8 +376,10 @@
 ; () -> Type
 (define fresh-tvar-type
   (lambda ()
-    (set! sn (+ sn 1))
-    (tvar-type sn)
+    (let ([ty (tvar-type sn)])
+      (set! sn (+ sn 1))
+      ty
+    )
   )
 )
 
