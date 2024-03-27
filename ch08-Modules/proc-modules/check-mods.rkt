@@ -5,6 +5,7 @@
 (require "static-data-structures.rkt")
 (require "checker.rkt")
 (require "subtyping.rkt")
+(require "renaming.rkt")
 
 (provide (all-defined-out))
 
@@ -148,58 +149,5 @@
       )
     )
     (eopl:error 'type-of-module-defn)
-  )
-)
-
-; Sym * Iface * Tenv -> Iface
-(define expand-iface
-  (lambda (m-name iface tenv)
-    (cases interface iface
-      (simple-iface (decls)
-        (simple-iface (expand-decls m-name decls tenv))
-      )
-      (proc-iface (param-name param-iface result-iface)
-        iface
-      )
-    )
-  )
-)
-
-; Sym * Listof(Decl) * Tenv -> Listof(Decl)
-(define expand-decls
-  (lambda (m-name decls internal-tenv)
-    (if (null? decls)
-      '()
-      (cases declaration (car decls)
-        (opaque-type-decl (t-name)
-          (let ([expanded-type (qualified-type m-name t-name)])
-            (let ([new-env (extend-tenv-with-type t-name expanded-type internal-tenv)])
-              (cons
-                (transparent-type-decl t-name expanded-type)
-                (expand-decls m-name (cdr decls) new-env)
-              )
-            )
-          )
-        )
-        (transparent-type-decl (t-name ty)
-          (let ([expanded-type (expand-type ty internal-tenv)])
-            (let ([new-env (extend-tenv-with-type t-name expanded-type internal-tenv)])
-              (cons
-                (transparent-type-decl t-name expanded-type)
-                (expand-decls m-name (cdr decls) new-env)
-              )
-            )
-          )
-        )
-        (val-decl (var-name ty)
-          (let ([expanded-type (expand-type ty internal-tenv)])
-            (cons
-              (val-decl var-name expanded-type)
-              (expand-decls m-name (cdr decls) internal-tenv)
-            )
-          )
-        )
-      )
-    )
   )
 )

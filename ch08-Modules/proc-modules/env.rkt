@@ -45,6 +45,11 @@
         (simple-module (bindings)
           (apply-env bindings var-name)
         )
+        (proc-module (b-var body saved-env)
+          (eopl:error 'lookup-qualified-var-in-env
+            "can't retrieve variable from ~s take ~s from proc module" m-name var-name
+          )
+        )
       )
     )
   )

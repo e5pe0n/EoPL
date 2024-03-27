@@ -74,7 +74,7 @@
         (named-type (rename-name id old new))
       )
       (qualified-type (m-name name)
-        (qualified-type (rename-name m-name) name)
+        (qualified-type (rename-name m-name old new) name)
       )
       (proc-type (t1 t2)
         (proc-type (rename-in-type t1 old new) (rename-in-type t2 old new))

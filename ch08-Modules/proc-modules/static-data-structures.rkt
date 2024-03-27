@@ -37,6 +37,11 @@
         (simple-iface (decls)
           (lookup-variable-name-in-decls var-name decls)
         )
+        (proc-iface (param-name param-iface result-iface)
+          (eopl:error 'lookup-qualified-var-in-tenv
+            "can't retrieve variable from ~s take ~s from proc-iface" m-name var-name
+          )
+        )
       )
     )
   )
@@ -205,6 +210,11 @@
         (cases interface maybe-iface
           (simple-iface (decls)
             (lookup-variable-name-in-decls t-name decls)
+          )
+          (proc-iface (param-name param-iface result-iface)
+            (eopl:error 'lookup-qualified-var-in-tenv
+              "can't retrieve variable from ~s take ~s from proc-iface" m-name t-name
+            )
           )
         )
         (report-tenv-lookup-failure-error 'qualified-type t-name tenv)

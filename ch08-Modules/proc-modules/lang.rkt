@@ -23,7 +23,7 @@
       a-module-definition
     )
     (interface ("[" (arbno declaration) "]") simple-iface)
-    (interface ("(" "(" identifier ":" interface "=>" interface ")" ")") proc-iface)
+    (interface ("(" "(" identifier ":" interface ")" "=>" interface ")") proc-iface)
     (declaration (identifier ":" type) val-decl)
     (declaration ("opaque" identifier) opaque-type-decl)
     (declaration ("transparent" identifier "=" type) transparent-type-decl)
