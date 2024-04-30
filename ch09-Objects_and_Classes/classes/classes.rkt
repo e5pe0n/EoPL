@@ -6,8 +6,6 @@
 
 (provide (all-defined-out))
 
-(define identifier? symbol?)
-
 (define-datatype object object?
   (an-object
     (class-name identifier?)

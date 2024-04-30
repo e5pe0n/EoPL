@@ -39,3 +39,40 @@
   end
 "))
 ; #(struct:list-val (#(struct:list-val (#(struct:num-val 3) #(struct:num-val -3))) #(struct:list-val (#(struct:num-val 5) #(struct:num-val -5)))))
+
+(println (run "
+  class point extends object
+    field x
+    field y
+    method initialize(initx, inity)
+      begin
+        set x = initx;
+        set y = inity
+      end
+    method move(dx, dy)
+      begin
+        set x = +(x, dx);
+        set y = +(y, dy)
+      end
+    method get-location() list(x, y)
+
+  class colorpoint extends point
+    field color
+    method initialize(initx, inity, initcolor)
+      begin
+        set x = initx;
+        set y = inity;
+        set color = initcolor
+      end
+    method set-color (c) set color = c
+    method get-color () color
+
+  let o1 = new colorpoint(3, 4, 172)
+  in begin
+    print(send o1 get-color());
+    print(send o1 get-location())
+  end
+"))
+; #(struct:num-val 172)
+; #(struct:list-val (#(struct:num-val 3) #(struct:num-val 4)))
+; 29

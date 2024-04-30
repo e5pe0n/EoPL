@@ -47,6 +47,15 @@
     )
   )
 )
+(define expval->list
+  (lambda (v)
+    (cases expval v
+      (list-val (lst) lst)
+      (else (expval-extractor-error 'list v))
+    )
+  )
+)
+
 
 (define expval-extractor-error
   (lambda (variant value)
